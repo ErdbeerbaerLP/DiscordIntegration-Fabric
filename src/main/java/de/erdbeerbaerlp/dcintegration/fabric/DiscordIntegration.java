@@ -181,7 +181,7 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
         if (discord_instance != null) {
             discord_instance.startThreads();
         }
-        UpdateChecker.runUpdateCheck("https://raw.githubusercontent.com/ErdbeerbaerLP/Discord-Integration-Fabric/1.17/update_checker.json");
+        UpdateChecker.runUpdateCheck("https://raw.githubusercontent.com/ErdbeerbaerLP/Discord-Integration-Fabric/1.17/update-checker.json");
     }
 
     private void serverStopping(MinecraftServer minecraftServer) {
