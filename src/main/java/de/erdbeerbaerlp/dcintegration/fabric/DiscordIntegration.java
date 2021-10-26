@@ -5,11 +5,13 @@ import de.erdbeerbaerlp.dcintegration.common.storage.CommandRegistry;
 import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
 import de.erdbeerbaerlp.dcintegration.common.storage.PlayerLinkController;
 import de.erdbeerbaerlp.dcintegration.common.util.DiscordMessage;
+import de.erdbeerbaerlp.dcintegration.common.util.MessageUtils;
 import de.erdbeerbaerlp.dcintegration.common.util.UpdateChecker;
 import de.erdbeerbaerlp.dcintegration.common.util.Variables;
 import de.erdbeerbaerlp.dcintegration.fabric.command.McCommandDiscord;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricServerInterface;
+import me.bymartrixx.playerevents.api.event.CommandExecutionCallback;
 import me.bymartrixx.playerevents.api.event.PlayerDeathCallback;
 import me.bymartrixx.playerevents.api.event.PlayerJoinCallback;
 import me.bymartrixx.playerevents.api.event.PlayerLeaveCallback;
@@ -21,9 +23,11 @@ import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
 
 import static de.erdbeerbaerlp.dcintegration.common.util.Variables.discord_instance;
 
@@ -59,6 +64,7 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
                 PlayerJoinCallback.EVENT.register(this::playerJoined);
                 PlayerLeaveCallback.EVENT.register(this::playerLeft);
                 PlayerDeathCallback.EVENT.register(this::death);
+                CommandExecutionCallback.EVENT.register(this::command);
             } else {
                 System.err.println("Please check the config file and set an bot token");
             }
@@ -69,6 +75,31 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
             System.err.println("Failed to read config file! Please check your config file!\nError description: " + e.getMessage());
             System.err.println("\nStacktrace: ");
             e.printStackTrace();
+        }
+    }
+
+    private void command(String s, ServerCommandSource serverCommandSource) {
+        String command = s.replaceFirst(Pattern.quote("/"), "");
+        if (!Configuration.instance().commandLog.channelID.equals("0")) {
+            if (!ArrayUtils.contains(Configuration.instance().commandLog.ignoredCommands, command.split(" ")[0]))
+                discord_instance.sendMessage(Configuration.instance().commandLog.message
+                        .replace("%sender%", serverCommandSource.getName())
+                        .replace("%cmd%", command)
+                        .replace("%cmd-no-args%", command.split(" ")[0]), discord_instance.getChannel(Configuration.instance().commandLog.channelID));
+        }
+        if (discord_instance != null) {
+            boolean raw = false;
+
+            if (((command.startsWith("say")) && Configuration.instance().messages.sendOnSayCommand) || (command.startsWith("me") && Configuration.instance().messages.sendOnMeCommand)) {
+                String msg = command.replace("say ", "");
+                if (command.startsWith("say"))
+                    msg = msg.replaceFirst("say ", "");
+                if (command.startsWith("me")) {
+                    raw = true;
+                    msg = "*" + MessageUtils.escapeMarkdown(msg.replaceFirst("me ", "").trim()) + "*";
+                }
+                discord_instance.sendMessage(serverCommandSource.getName(), serverCommandSource.getEntity().getUuid().toString(), new DiscordMessage(null, msg, !raw), discord_instance.getChannel(Configuration.instance().advanced.chatOutputChannelID));
+            }
         }
     }
 

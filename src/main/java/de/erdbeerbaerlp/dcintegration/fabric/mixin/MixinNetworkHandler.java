@@ -38,9 +38,9 @@ public class MixinNetworkHandler {
     /**
      * Handle chat messages
      */
-    @Redirect(method="handleMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Ljava/util/function/Function;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V"))
-    public void chatMessage(PlayerManager instance, Text txt, Function<ServerPlayerEntity, Text> playerMessageFactory, MessageType playerMessageType, UUID sender){
-        if (PlayerLinkController.getSettings(null, player.getUuid()).hideFromDiscord){
+    @Redirect(method = "handleMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Ljava/util/function/Function;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V"))
+    public void chatMessage(PlayerManager instance, Text txt, Function<ServerPlayerEntity, Text> playerMessageFactory, MessageType playerMessageType, UUID sender) {
+        if (PlayerLinkController.getSettings(null, player.getUuid()).hideFromDiscord) {
             instance.broadcast(txt, playerMessageFactory, playerMessageType, sender);
             return;
         }
@@ -52,11 +52,10 @@ public class MixinNetworkHandler {
             }
             return false;
         })) {
-            instance.broadcast(txt, playerMessageFactory, playerMessageType, sender);
+            instance.broadcast(finalTxt, playerMessageFactory, playerMessageType, sender);
             return;
         }
-
-        String text = MessageUtils.escapeMarkdown(((String)((TranslatableText)txt).getArgs()[1]));
+        String text = MessageUtils.escapeMarkdown(((String) ((TranslatableText) txt).getArgs()[1]));
         final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(txt);
         if (discord_instance != null) {
             TextChannel channel = discord_instance.getChannel(Configuration.instance().advanced.chatOutputChannelID);
