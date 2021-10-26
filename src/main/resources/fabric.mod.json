@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "dcintegration-fabric",
+  "version": "${version}",
+  "name": "Discord Integration Fabric",
+  "description": "",
+  "authors": ["ErdbeerbaerLP"],
+  "contact": {},
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "server": [
+      "de.erdbeerbaerlp.dcintegration.fabric.DiscordIntegration"
+    ]
+  },
+  "mixins": [
+    "dcintegration-fabric.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.12.3",
+    "fabric": "*",
+    "minecraft": "1.17.1",
+    "player_events_api": ">=2.0.0"
+  }
+}
