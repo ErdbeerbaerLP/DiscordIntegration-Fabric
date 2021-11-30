@@ -72,7 +72,7 @@ java {
 }
 
 remapJar{
-    classifier = "1.17"
+    classifier = "1.18"
 }
 
 jar {
@@ -89,9 +89,9 @@ curseforge {
             id = '493679'
             changelog = project.changelog
             releaseType = project.releaseType.toLowerCase()
-            addGameVersion '1.17.1'
+            addGameVersion '1.18'
             mainArtifact(remapJar) {
-                displayName = "DiscordIntegration-Fabric $version (MC 1.17)"
+                displayName = "DiscordIntegration-Fabric $version (MC 1.18)"
             }
             relations {
                 requiredDependency 'fabric-api'
@@ -107,11 +107,11 @@ task publishModrinth (type: TaskModrinthUpload){
     if (project.hasProperty('modrinth.apikey')) { // $GRADLE_USER_HOME/gradle.properties
         token = getProperty("modrinth.apikey") // Use an environment property!
         projectId = 'rbJ7eS5V'
-        versionNumber = version+"-fabric-1.17"
-        versionName = "DiscordIntegration-Fabric $version (MC 1.17)"
+        versionNumber = version+"-fabric-1.18"
+        versionName = "DiscordIntegration-Fabric $version (MC 1.18)"
         uploadFile = remapJar
         changelog = project.changelog
-        addGameVersion('1.17.1')
+        addGameVersion('1.18')
         addLoader('fabric')
         versionType = project.releaseType.toUpperCase()
     }
