@@ -1,6 +1,6 @@
 package de.erdbeerbaerlp.dcintegration.fabric.mixin;
 
-import net.fabricmc.loader.api.FabricLoader;
+import de.erdbeerbaerlp.dcintegration.fabric.util.CompatibilityUtils;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -16,7 +16,7 @@ public class MixinConfig implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(String mixinPackage) {
-        boolean styledChatLoaded = FabricLoader.getInstance().isModLoaded("styledchat");
+        boolean styledChatLoaded = CompatibilityUtils.styledChatLoaded();
         conditionalMixins.put("de.erdbeerbaerlp.dcintegration.fabric.mixin.MixinNetworkHandler", !styledChatLoaded);
     }
 

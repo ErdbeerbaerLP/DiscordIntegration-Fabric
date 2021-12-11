@@ -27,9 +27,7 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
@@ -172,7 +170,7 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
             return txt;
         }
 
-        String messageText = MessageUtils.escapeMarkdown(((LiteralText) txt).getRawString());
+        String messageText = MessageUtils.escapeMarkdown(txt.getString());
         final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(txt);
         if (discord_instance != null) {
             TextChannel channel = discord_instance.getChannel(Configuration.instance().advanced.chatOutputChannelID);
