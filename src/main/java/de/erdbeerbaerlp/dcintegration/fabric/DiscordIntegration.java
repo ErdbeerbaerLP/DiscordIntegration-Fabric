@@ -1,5 +1,7 @@
 package de.erdbeerbaerlp.dcintegration.fabric;
 
+import dcshadow.net.kyori.adventure.text.Component;
+import dcshadow.net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import de.erdbeerbaerlp.dcintegration.common.Discord;
 import de.erdbeerbaerlp.dcintegration.common.storage.CommandRegistry;
 import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
@@ -8,17 +10,17 @@ import de.erdbeerbaerlp.dcintegration.common.util.DiscordMessage;
 import de.erdbeerbaerlp.dcintegration.common.util.MessageUtils;
 import de.erdbeerbaerlp.dcintegration.common.util.UpdateChecker;
 import de.erdbeerbaerlp.dcintegration.common.util.Variables;
+import de.erdbeerbaerlp.dcintegration.fabric.api.FabricDiscordEventHandler;
 import de.erdbeerbaerlp.dcintegration.fabric.command.McCommandDiscord;
+import de.erdbeerbaerlp.dcintegration.fabric.util.CompatibilityUtils;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricServerInterface;
+import eu.pb4.styledchat.StyledChatEvents;
 import me.bymartrixx.playerevents.api.event.CommandExecutionCallback;
 import me.bymartrixx.playerevents.api.event.PlayerDeathCallback;
 import me.bymartrixx.playerevents.api.event.PlayerJoinCallback;
 import me.bymartrixx.playerevents.api.event.PlayerLeaveCallback;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.*;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.entity.damage.DamageSource;
@@ -65,6 +67,9 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
                 PlayerLeaveCallback.EVENT.register(this::playerLeft);
                 PlayerDeathCallback.EVENT.register(this::death);
                 CommandExecutionCallback.EVENT.register(this::command);
+                if (CompatibilityUtils.styledChatLoaded()) {
+                    StyledChatEvents.MESSAGE_CONTENT_SEND.register(this::styledChat);
+                }
             } else {
                 System.err.println("Please check the config file and set an bot token");
             }
@@ -145,6 +150,43 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
             fixLinkStatus.setDaemon(true);
             fixLinkStatus.start();
         }
+    }
+
+
+    private Text styledChat(Text txt, ServerPlayerEntity player, boolean filtered) {
+        if (PlayerLinkController.getSettings(null, player.getUuid()).hideFromDiscord || filtered) {
+            return txt;
+        }
+
+        Text finalTxt = txt;
+        boolean cancelled = discord_instance.callEvent((e) -> {
+            if (e instanceof FabricDiscordEventHandler) {
+                return ((FabricDiscordEventHandler) e).onMcChatMessage(finalTxt, player);
+            }
+            return false;
+        });
+
+        if (cancelled) {
+            return txt;
+        }
+
+        String messageText = MessageUtils.escapeMarkdown(txt.getString());
+        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(txt);
+        if (discord_instance != null) {
+            TextChannel channel = discord_instance.getChannel(Configuration.instance().advanced.chatOutputChannelID);
+            if (channel == null) {
+                return txt;
+            }
+            discord_instance.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, messageText, true), channel);
+
+            final String json = Text.Serializer.toJson(txt);
+            Component comp = GsonComponentSerializer.gson().deserialize(json);
+            final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
+
+            txt = Text.Serializer.fromJson(editedJson);
+        }
+
+        return txt;
     }
 
 
