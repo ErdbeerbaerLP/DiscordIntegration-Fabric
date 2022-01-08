@@ -40,6 +40,8 @@ public class MixinNetworkHandler {
      */
     @Redirect(method = "handleMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Ljava/util/function/Function;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V"))
     public void chatMessage(PlayerManager instance, Text txt, Function<ServerPlayerEntity, Text> playerMessageFactory, MessageType playerMessageType, UUID sender) {
+        if (discord_instance == null) return;
+
         if (PlayerLinkController.getSettings(null, player.getUuid()).hideFromDiscord) {
             instance.broadcast(txt, playerMessageFactory, playerMessageType, sender);
             return;

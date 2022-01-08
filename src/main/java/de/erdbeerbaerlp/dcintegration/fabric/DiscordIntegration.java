@@ -130,8 +130,8 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
     }
 
     private void playerJoined(ServerPlayerEntity p, MinecraftServer minecraftServer) {
-        if (PlayerLinkController.getSettings(null, p.getUuid()).hideFromDiscord) return;
         if (discord_instance != null) {
+            if (PlayerLinkController.getSettings(null, p.getUuid()).hideFromDiscord) return;
             discord_instance.sendMessage(Configuration.instance().localization.playerJoin.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
 
             // Fix link status (if user does not have role, give the role to the user, or vice versa)
