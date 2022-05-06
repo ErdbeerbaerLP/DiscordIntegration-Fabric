@@ -1,6 +1,6 @@
 package de.erdbeerbaerlp.dcintegration.fabric.mixin;
 
-import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
+import de.erdbeerbaerlp.dcintegration.common.storage.Localization;
 import de.erdbeerbaerlp.dcintegration.common.storage.PlayerLinkController;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
 import net.minecraft.advancement.Advancement;
@@ -24,7 +24,7 @@ public class MixinAdvancement {
     public void advancement(Advancement advancement, String criterionName, CallbackInfoReturnable<Boolean> cir){
         if (PlayerLinkController.getSettings(null, owner.getUuid()).hideFromDiscord) return;
             if (discord_instance != null && advancement != null &&advancement.getDisplay() != null && advancement.getDisplay().shouldAnnounceToChat())
-                discord_instance.sendMessage(Configuration.instance().localization.advancementMessage.replace("%player%",
+                discord_instance.sendMessage(Localization.instance().advancementMessage.replace("%player%",
                                 Formatting.strip(FabricMessageUtils.formatPlayerName(owner)))
                         .replace("%name%",
                                 Formatting.strip(advancement

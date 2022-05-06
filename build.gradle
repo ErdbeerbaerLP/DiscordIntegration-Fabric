@@ -17,6 +17,7 @@ repositories {
     maven {
         url 'https://maven.bymartrixx.me'
     }
+    maven { url "https://repo.erdbeerbaerlp.de/repository/maven-public/" }
 }
 task release{
 
@@ -34,7 +35,9 @@ dependencies {
     modImplementation "me.bymartrixx.player-events:api:2.1.3"
 
     // =========  Common  =====================
-    modImplementation include('de.erdbeerbaerlp:DiscordIntegration-Core:ce44c82e')
+    modImplementation include('de.erdbeerbaerlp:dcintegration.common:2.4.1') {
+        changing = true
+    }
 
 }
 
@@ -89,9 +92,9 @@ curseforge {
             id = '493679'
             changelog = project.changelog
             releaseType = project.releaseType.toLowerCase()
-            addGameVersion '1.18'
+            addGameVersion '1.18.2'
             mainArtifact(remapJar) {
-                displayName = "DiscordIntegration-Fabric $version (MC 1.18)"
+                displayName = "DiscordIntegration-Fabric $version (MC 1.18.2)"
             }
             relations {
                 requiredDependency 'fabric-api'

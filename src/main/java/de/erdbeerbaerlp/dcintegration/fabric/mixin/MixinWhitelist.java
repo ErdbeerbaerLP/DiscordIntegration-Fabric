@@ -2,6 +2,7 @@ package de.erdbeerbaerlp.dcintegration.fabric.mixin;
 
 import com.mojang.authlib.GameProfile;
 import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
+import de.erdbeerbaerlp.dcintegration.common.storage.Localization;
 import de.erdbeerbaerlp.dcintegration.common.storage.PlayerLinkController;
 import de.erdbeerbaerlp.dcintegration.common.util.Variables;
 import net.minecraft.server.PlayerManager;
@@ -25,7 +26,9 @@ public class MixinWhitelist {
         if (Configuration.instance().linking.whitelistMode && discord_instance.srv.isOnlineMode()) {
             try {
                 if (!PlayerLinkController.isPlayerLinked(profile.getId())) {
-                    cir.setReturnValue(Text.of(Configuration.instance().localization.linking.notWhitelistedCode.replace("%code%",""+ discord_instance.genLinkNumber(profile.getId()))));
+                    cir.setReturnValue(Text.of(Localization.instance().linking.notWhitelistedCode.replace("%code%",""+ discord_instance.genLinkNumber(profile.getId()))));
+                }else if(!Variables.discord_instance.canPlayerJoin(profile.getId())){
+                    cir.setReturnValue(Text.of(Localization.instance().linking.notWhitelistedRole));
                 }
             } catch (IllegalStateException e) {
                 cir.setReturnValue(Text.of("Please check " + Variables.discordDataDir + "LinkedPlayers.json\n\n" + e.toString()));

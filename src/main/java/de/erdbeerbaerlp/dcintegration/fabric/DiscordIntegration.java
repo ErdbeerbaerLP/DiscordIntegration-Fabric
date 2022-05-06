@@ -3,6 +3,7 @@ package de.erdbeerbaerlp.dcintegration.fabric;
 import de.erdbeerbaerlp.dcintegration.common.Discord;
 import de.erdbeerbaerlp.dcintegration.common.storage.CommandRegistry;
 import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
+import de.erdbeerbaerlp.dcintegration.common.storage.Localization;
 import de.erdbeerbaerlp.dcintegration.common.storage.PlayerLinkController;
 import de.erdbeerbaerlp.dcintegration.common.util.DiscordMessage;
 import de.erdbeerbaerlp.dcintegration.common.util.MessageUtils;
@@ -108,7 +109,7 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
         if (discord_instance != null) {
             final Text deathMessage = s.getDeathMessage(p);
             final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(deathMessage);
-            discord_instance.sendMessage(new DiscordMessage(embed, Configuration.instance().localization.playerDeath.replace("%player%", FabricMessageUtils.formatPlayerName(p)).replace("%msg%", Formatting.strip(deathMessage.getString()).replace(FabricMessageUtils.formatPlayerName(p) + " ", ""))), discord_instance.getChannel(Configuration.instance().advanced.deathsChannelID));
+            discord_instance.sendMessage(new DiscordMessage(embed, Localization.instance().playerDeath.replace("%player%", FabricMessageUtils.formatPlayerName(p)).replace("%msg%", Formatting.strip(deathMessage.getString()).replace(FabricMessageUtils.formatPlayerName(p) + " ", ""))), discord_instance.getChannel(Configuration.instance().advanced.deathsChannelID));
         }
 
     }
@@ -117,9 +118,9 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
         if (stopped) return; //Try to fix player leave messages after stop!
         if (PlayerLinkController.getSettings(null, p.getUuid()).hideFromDiscord) return;
         if (discord_instance != null && !timeouts.contains(p.getUuid()))
-            discord_instance.sendMessage(Configuration.instance().localization.playerLeave.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
+            discord_instance.sendMessage(Localization.instance().playerLeave.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
         else if (discord_instance != null && timeouts.contains(p.getUuid())) {
-            discord_instance.sendMessage(Configuration.instance().localization.playerTimeout.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
+            discord_instance.sendMessage(Localization.instance().playerTimeout.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
             timeouts.remove(p.getUuid());
         }
     }
@@ -127,7 +128,7 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
     private void playerJoined(ServerPlayerEntity p, MinecraftServer minecraftServer) {
         if (PlayerLinkController.getSettings(null, p.getUuid()).hideFromDiscord) return;
         if (discord_instance != null) {
-            discord_instance.sendMessage(Configuration.instance().localization.playerJoin.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
+            discord_instance.sendMessage(Localization.instance().playerJoin.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
 
             // Fix link status (if user does not have role, give the role to the user, or vice versa)
             final Thread fixLinkStatus = new Thread(() -> {
@@ -159,10 +160,10 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
             }
             if (discord_instance.getJDA() != null) {
                 Thread.sleep(2000); //Wait for it to cache the channels
-                if (!Configuration.instance().localization.serverStarting.isEmpty()) {
+                if (!Localization.instance().serverStarting.isEmpty()) {
                     CommandRegistry.registerDefaultCommandsFromConfig();
                     if (discord_instance.getChannel() != null)
-                        Variables.startingMsg = discord_instance.sendMessageReturns(Configuration.instance().localization.serverStarting, discord_instance.getChannel(Configuration.instance().advanced.serverChannelID));
+                        Variables.startingMsg = discord_instance.sendMessageReturns(Localization.instance().serverStarting, discord_instance.getChannel(Configuration.instance().advanced.serverChannelID));
                 }
             }
         } catch (InterruptedException | NullPointerException ignored) {
@@ -175,8 +176,8 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
         Variables.started = new Date().getTime();
         if (discord_instance != null) {
             if (Variables.startingMsg != null) {
-                Variables.startingMsg.thenAccept((a) -> a.editMessage(Configuration.instance().localization.serverStarted).queue());
-            } else discord_instance.sendMessage(Configuration.instance().localization.serverStarted);
+                Variables.startingMsg.thenAccept((a) -> a.editMessage(Localization.instance().serverStarted).queue());
+            } else discord_instance.sendMessage(Localization.instance().serverStarted);
         }
         if (discord_instance != null) {
             discord_instance.startThreads();
@@ -186,7 +187,7 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
 
     private void serverStopping(MinecraftServer minecraftServer) {
         if (discord_instance != null) {
-            discord_instance.sendMessage(Configuration.instance().localization.serverStopped);
+            discord_instance.sendMessage(Localization.instance().serverStopped);
             discord_instance.stopThreads();
         }
         this.stopped = true;
@@ -197,7 +198,7 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
             if (!stopped && discord_instance.getJDA() != null) minecraftServer.execute(() -> {
                 discord_instance.stopThreads();
                 try {
-                    discord_instance.sendMessageReturns(Configuration.instance().localization.serverCrash, discord_instance.getChannel(Configuration.instance().advanced.serverChannelID)).get();
+                    discord_instance.sendMessageReturns(Localization.instance().serverCrash, discord_instance.getChannel(Configuration.instance().advanced.serverChannelID)).get();
                 } catch (InterruptedException | ExecutionException ignored) {
                 }
             });
