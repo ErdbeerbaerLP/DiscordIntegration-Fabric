@@ -23,6 +23,8 @@ public class MixinWhitelist {
      */
     @Inject(method = "checkCanJoin", at = @At("HEAD"), cancellable = true)
     public void canJoin(SocketAddress address, GameProfile profile, CallbackInfoReturnable<Text> cir){
+        if (discord_instance == null) return;
+
         if (Configuration.instance().linking.whitelistMode && discord_instance.srv.isOnlineMode()) {
             try {
                 if (!PlayerLinkController.isPlayerLinked(profile.getId())) {
