@@ -58,7 +58,7 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
     @Override
     public void onInitializeServer() {
         try {
-            Configuration.instance().loadConfig();
+            Discord.loadConfigs();
             if (!Configuration.instance().general.botToken.equals("INSERT BOT TOKEN HERE")) {
                 ServerLifecycleEvents.SERVER_STARTING.register(this::serverStarting);
                 ServerLifecycleEvents.SERVER_STARTED.register(this::serverStarted);
