@@ -19,7 +19,7 @@ public class McCommandDiscord {
     public McCommandDiscord(CommandDispatcher<ServerCommandSource> dispatcher) {
         final LiteralArgumentBuilder<ServerCommandSource> l = CommandManager.literal("discord");
         if (Configuration.instance().ingameCommand.enabled) l.executes((ctx) -> {
-            ctx.getSource().sendFeedback(Texts.setStyleIfAbsent(new LiteralText(Configuration.instance().ingameCommand.message),
+            ctx.getSource().sendFeedback(Texts.setStyleIfAbsent(Text.literal(Configuration.instance().ingameCommand.message),
                     Style.EMPTY.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of(Configuration.instance().ingameCommand.hoverMessage)))
                             .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, Configuration.instance().ingameCommand.inviteURL))), false);
             return 0;
@@ -43,7 +43,7 @@ public class McCommandDiscord {
                     return 0;
                 }
                 final int r = discord_instance.genLinkNumber(ctx.getSource().getPlayer().getUuid());
-                ctx.getSource().sendFeedback(Texts.setStyleIfAbsent(new LiteralText(Localization.instance().linking.linkMsgIngame.replace("%num%", r + "").replace("%prefix%", "/")), Style.EMPTY.withFormatting(Formatting.AQUA).withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, "" + r)).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText(Localization.instance().linking.hoverMsg_copyClipboard)))), false);
+                ctx.getSource().sendFeedback(Texts.setStyleIfAbsent(Text.literal(Localization.instance().linking.linkMsgIngame.replace("%num%", r + "").replace("%prefix%", "/")), Style.EMPTY.withFormatting(Formatting.AQUA).withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, "" + r)).withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal(Localization.instance().linking.hoverMsg_copyClipboard)))), false);
             } else {
                 ctx.getSource().sendFeedback(Text.of(Formatting.RED + Localization.instance().commands.subcommandDisabled), false);
             }
@@ -56,7 +56,7 @@ public class McCommandDiscord {
             try {
                 Configuration.instance().loadConfig();
             } catch (IOException e) {
-                ctx.getSource().sendFeedback(Texts.setStyleIfAbsent(new LiteralText(e.getMessage()),Style.EMPTY.withFormatting(Formatting.RED)),true);
+                ctx.getSource().sendFeedback(Texts.setStyleIfAbsent(Text.literal(e.getMessage()),Style.EMPTY.withFormatting(Formatting.RED)),true);
                 e.printStackTrace();
             }
             AddonLoader.reloadAll();

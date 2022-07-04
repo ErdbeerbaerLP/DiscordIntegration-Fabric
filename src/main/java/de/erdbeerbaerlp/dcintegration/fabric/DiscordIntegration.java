@@ -13,10 +13,8 @@ import de.erdbeerbaerlp.dcintegration.common.util.UpdateChecker;
 import de.erdbeerbaerlp.dcintegration.common.util.Variables;
 import de.erdbeerbaerlp.dcintegration.fabric.api.FabricDiscordEventHandler;
 import de.erdbeerbaerlp.dcintegration.fabric.command.McCommandDiscord;
-import de.erdbeerbaerlp.dcintegration.fabric.util.CompatibilityUtils;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricServerInterface;
-import eu.pb4.styledchat.StyledChatEvents;
 import me.bymartrixx.playerevents.api.event.CommandExecutionCallback;
 import me.bymartrixx.playerevents.api.event.PlayerDeathCallback;
 import me.bymartrixx.playerevents.api.event.PlayerJoinCallback;
@@ -68,9 +66,10 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
                 PlayerLeaveCallback.EVENT.register(this::playerLeft);
                 PlayerDeathCallback.EVENT.register(this::death);
                 CommandExecutionCallback.EVENT.register(this::command);
+                /*
                 if (CompatibilityUtils.styledChatLoaded()) {
-                    StyledChatEvents.MESSAGE_CONTENT_SEND.register(this::styledChat);
-                }
+                    StyledChatEvents.PRE_MESSAGE_CONTENT.register(this::styledChat);
+                }*/
             } else {
                 System.err.println("Please check the config file and set an bot token");
             }
@@ -83,6 +82,7 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
             e.printStackTrace();
         }
     }
+
 
     private void command(String s, ServerCommandSource serverCommandSource) {
         String command = s.replaceFirst(Pattern.quote("/"), "");

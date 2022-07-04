@@ -1,8 +1,6 @@
 package de.erdbeerbaerlp.dcintegration.fabric.mixin;
 
 
-import dcshadow.net.kyori.adventure.text.Component;
-import dcshadow.net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
 import de.erdbeerbaerlp.dcintegration.common.storage.PlayerLinkController;
 import de.erdbeerbaerlp.dcintegration.common.util.DiscordMessage;
@@ -12,21 +10,21 @@ import de.erdbeerbaerlp.dcintegration.fabric.api.FabricDiscordEventHandler;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.minecraft.network.MessageType;
+import net.minecraft.network.message.MessageType;
+import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.PlayerManager;
+import net.minecraft.server.filter.FilteredMessage;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.TranslatableTextContent;
+import net.minecraft.util.registry.RegistryKey;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.UUID;
-import java.util.function.Function;
 
 import static de.erdbeerbaerlp.dcintegration.common.util.Variables.discord_instance;
 
@@ -38,41 +36,40 @@ public class MixinNetworkHandler {
     /**
      * Handle chat messages
      */
-    @Redirect(method = "handleMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Ljava/util/function/Function;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V"))
-    public void chatMessage(PlayerManager instance, Text txt, Function<ServerPlayerEntity, Text> playerMessageFactory, MessageType playerMessageType, UUID sender) {
+    @Redirect(method = "handleDecoratedMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/server/filter/FilteredMessage;Lnet/minecraft/server/network/ServerPlayerEntity;Lnet/minecraft/util/registry/RegistryKey;)V"))
+    public void chatMessage(PlayerManager instance, FilteredMessage<SignedMessage> message, ServerPlayerEntity sender, RegistryKey<MessageType> typeKey) {
         if (discord_instance == null) return;
-
         if (PlayerLinkController.getSettings(null, player.getUuid()).hideFromDiscord) {
-            instance.broadcast(txt, playerMessageFactory, playerMessageType, sender);
+            instance.broadcast(message, sender, typeKey);
             return;
         }
 
-        Text finalTxt = txt;
         if (discord_instance.callEvent((e) -> {
             if (e instanceof FabricDiscordEventHandler) {
-                return ((FabricDiscordEventHandler) e).onMcChatMessage(finalTxt, player);
+                return ((FabricDiscordEventHandler) e).onMcChatMessage(message.raw().getContent(), player);
             }
             return false;
         })) {
-            instance.broadcast(finalTxt, playerMessageFactory, playerMessageType, sender);
+            instance.broadcast(message, sender, typeKey);
             return;
         }
-        String text = MessageUtils.escapeMarkdown(((String) ((TranslatableText) txt).getArgs()[1]));
-        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(txt);
+        String text = MessageUtils.escapeMarkdown(message.raw().getContent().getString());
+        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(message.raw().getContent());
         if (discord_instance != null) {
             TextChannel channel = discord_instance.getChannel(Configuration.instance().advanced.chatOutputChannelID);
             if (channel == null) {
-                instance.broadcast(txt, playerMessageFactory, playerMessageType, sender);
+                instance.broadcast(message, sender, typeKey);
                 return;
             }
             discord_instance.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, text, true), channel);
-            final String json = Text.Serializer.toJson(txt);
+            /*final String json = Text.Serializer.toJson(message.raw().getContent());
             Component comp = GsonComponentSerializer.gson().deserialize(json);
             final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
 
-            txt = Text.Serializer.fromJson(editedJson);
+            Text.Serializer.fromJson(editedJson);*/
         }
-        instance.broadcast(txt, playerMessageFactory, playerMessageType, sender);
+
+        instance.broadcast(message, sender, typeKey);
     }
 
     /**
@@ -80,7 +77,7 @@ public class MixinNetworkHandler {
      */
     @Inject(method = "disconnect", at = @At("HEAD"))
     private void onDisconnect(final Text textComponent, CallbackInfo ci) {
-        if (textComponent.equals(new TranslatableText("disconnect.timeout")))
+        if (textComponent.equals(new TranslatableTextContent("disconnect.timeout")))
             DiscordIntegration.timeouts.add(this.player.getUuid());
     }
 }
