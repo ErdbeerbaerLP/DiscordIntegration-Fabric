@@ -1,11 +1,7 @@
 [
   {
-    "version": "2.4.2",
-    "changelog": "ALPHA Version, expect bugs!\\nFix messages file not generated",
-    "type": "alpha"
-  },{
-    "version": "2.3.5",
-    "changelog": "Fabric port",
+    "version": "2.4.4",
+    "changelog": "(Another forgotten version number update)\nUpdate to 1.19.1\nFix StyledChat compatibility\nNo longer depending on PlayerEvents API",
     "type": "beta"
   }
 ]
