@@ -5,9 +5,12 @@
   "plugin": "de.erdbeerbaerlp.dcintegration.fabric.mixin.MixinConfig",
   "compatibilityLevel": "JAVA_17",
   "server": [
-    "MixinNetworkHandler",
-    "MixinWhitelist",
-    "MixinAdvancement"
+    "AdvancementMixin",
+    "NetworkHandlerMixin",
+    "ServerPlayerEntityMixin",
+    "PlayerManagerMixin",
+    "ChatMixin",
+    "StyledChatMixin"
   ],
   "injectors": {
     "defaultRequire": 1

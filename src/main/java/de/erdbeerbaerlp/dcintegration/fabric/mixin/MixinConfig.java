@@ -17,7 +17,7 @@ public class MixinConfig implements IMixinConfigPlugin {
     @Override
     public void onLoad(String mixinPackage) {
         boolean styledChatLoaded = CompatibilityUtils.styledChatLoaded();
-        conditionalMixins.put("de.erdbeerbaerlp.dcintegration.fabric.mixin.MixinNetworkHandler", !styledChatLoaded);
+        conditionalMixins.put("de.erdbeerbaerlp.dcintegration.fabric.mixin.ChatMixin", !styledChatLoaded);
     }
 
     @Override

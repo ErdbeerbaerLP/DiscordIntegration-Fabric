@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import static de.erdbeerbaerlp.dcintegration.common.util.Variables.discord_instance;
 
 @Mixin(PlayerAdvancementTracker.class)
-public class MixinAdvancement {
+public class AdvancementMixin {
     @Shadow
     ServerPlayerEntity owner;
 
