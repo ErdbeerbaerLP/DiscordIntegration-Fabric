@@ -6,7 +6,11 @@ plugins {
 
 version = project.mod_version
 group = project.maven_group
-
+configurations.all {
+    resolutionStrategy {
+        cacheChangingModulesFor 5, 'minutes'
+    }
+}
 repositories {
     mavenCentral()
     maven {
@@ -43,7 +47,7 @@ dependencies {
     modCompileOnly "maven.modrinth:styled-chat:1.4.0+1.19.1"
 
     // =========  Common  =====================
-    modImplementation include('de.erdbeerbaerlp:dcintegration.common:2.4.6') {
+    modImplementation include('de.erdbeerbaerlp:dcintegration.common:2.4.7-SNAPSHOT') {
         changing = true
     }
 
@@ -95,7 +99,7 @@ jar {
 //Curseforge publishing
 curseforge {
     if (project.hasProperty('curseforge.apikey')) { // $GRADLE_USER_HOME/gradle.properties
-        apiKey = getProperty("curseforge.apikey")
+        apiKey = project.getProperty("curseforge.apikey")
         project {
             id = '493679'
             changelog = project.changelog
@@ -113,7 +117,7 @@ curseforge {
 }
 modrinth{
     if (project.hasProperty('modrinth.apikey')) { // $GRADLE_USER_HOME/gradle.properties
-        token = getProperty("modrinth.apikey") // Use an environment property!
+        token = project.getProperty("modrinth.apikey") // Use an environment property!
         projectId = 'rbJ7eS5V'
         versionNumber = version+"-${project.minecraft_version}"
         versionName = "DiscordIntegration-Fabric $version (MC ${project.minecraft_version})"
