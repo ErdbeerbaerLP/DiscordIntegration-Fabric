@@ -146,4 +146,9 @@ public class FabricServerInterface implements ServerInterface {
     public String getNameFromUUID(UUID uuid) {
         return server.getSessionService().fillProfileProperties(new GameProfile(uuid,""),false).getName();
     }
+
+    @Override
+    public String getLoaderName() {
+        return "Fabric";
+    }
 }

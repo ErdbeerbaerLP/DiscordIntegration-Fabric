@@ -13,7 +13,7 @@ import de.erdbeerbaerlp.dcintegration.fabric.command.McCommandDiscord;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricServerInterface;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.network.message.DecoratedContents;
@@ -22,8 +22,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +30,7 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import static de.erdbeerbaerlp.dcintegration.common.util.Variables.LOGGER;
 import static de.erdbeerbaerlp.dcintegration.common.util.Variables.discord_instance;
 
 public class DiscordIntegration implements DedicatedServerModInitializer {
@@ -44,7 +43,6 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
      */
     public static final ArrayList<UUID> timeouts = new ArrayList<>();
     public static boolean stopped = false;
-    public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     public static SignedMessage handleChatMessage(SignedMessage message, ServerPlayerEntity player) {
         if (discord_instance == null) return message;
