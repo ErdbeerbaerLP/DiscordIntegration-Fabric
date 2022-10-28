@@ -22,12 +22,14 @@ import net.dv8tion.jda.api.entities.emoji.EmojiUnion;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.minecraft.command.argument.TextArgumentType;
+import net.minecraft.network.MessageType;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
+import net.minecraft.util.Util;
 
 import java.util.HashMap;
 import java.util.List;
@@ -65,7 +67,7 @@ public class FabricServerInterface implements ServerInterface {
                     p.sendMessage(comp, false);
                     if (ping.getKey()) {
                         if (PlayerLinkController.getSettings(null, p.getUuid()).pingSound) {
-                            p.networkHandler.connection.send(new PlaySoundS2CPacket(SoundEvents.BLOCK_NOTE_BLOCK_PLING, SoundCategory.MASTER, p.getPos().x,p.getPos().y,p.getPos().z, 1, 1, server.getOverworld().getSeed()));
+                            p.networkHandler.connection.send(new PlaySoundS2CPacket(SoundEvents.BLOCK_NOTE_BLOCK_PLING, SoundCategory.MASTER, p.getPos().x,p.getPos().y,p.getPos().z, 1, 1));
                         }
                     }
                 }
@@ -73,7 +75,7 @@ public class FabricServerInterface implements ServerInterface {
             //Send to server console too
             final String jsonComp = GsonComponentSerializer.gson().serialize(msg).replace("\\\\n", "\n");
             final Text comp = TextArgumentType.text().parse(new StringReader(jsonComp));
-            server.sendMessage(comp);
+            server.sendSystemMessage(comp, Util.NIL_UUID);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -134,7 +136,7 @@ public class FabricServerInterface implements ServerInterface {
     public void sendMCMessage(String msg, UUID player) {
         final ServerPlayerEntity p = server.getPlayerManager().getPlayer(player);
         if (p != null)
-            p.sendMessage( Text.of(msg));
+            p.sendMessage( Text.of(msg), MessageType.CHAT,Util.NIL_UUID);
     }
 
     @Override

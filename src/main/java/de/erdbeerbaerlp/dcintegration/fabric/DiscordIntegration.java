@@ -10,18 +10,18 @@ import de.erdbeerbaerlp.dcintegration.common.storage.PlayerLinkController;
 import de.erdbeerbaerlp.dcintegration.common.util.*;
 import de.erdbeerbaerlp.dcintegration.fabric.api.FabricDiscordEventHandler;
 import de.erdbeerbaerlp.dcintegration.fabric.command.McCommandDiscord;
+import de.erdbeerbaerlp.dcintegration.fabric.util.CompatibilityUtils;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricServerInterface;
+import eu.pb4.styledchat.StyledChatEvents;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.network.message.DecoratedContents;
-import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,35 +44,34 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
     public static final ArrayList<UUID> timeouts = new ArrayList<>();
     public static boolean stopped = false;
 
-    public static SignedMessage handleChatMessage(SignedMessage message, ServerPlayerEntity player) {
+    public static Text handleChatMessage(Text message, ServerPlayerEntity player) {
         if (discord_instance == null) return message;
         if (PlayerLinkController.getSettings(null, player.getUuid()).hideFromDiscord) {
             return message;
         }
 
-        SignedMessage finalMessage = message;
+        Text finalTxt = message;
         if (discord_instance.callEvent((e) -> {
             if (e instanceof FabricDiscordEventHandler) {
-                return ((FabricDiscordEventHandler) e).onMcChatMessage(finalMessage.getContent(), player);
+                return ((FabricDiscordEventHandler) e).onMcChatMessage(finalTxt, player);
             }
             return false;
         })) {
-            return message;
+            return finalTxt;
         }
-        String text = MessageUtils.escapeMarkdown(message.getContent().getString());
-        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(message.getContent());
+        String text = MessageUtils.escapeMarkdown(((String) ((TranslatableText) message).getArgs()[1]));
+        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(message);
         if (discord_instance != null) {
             TextChannel channel = discord_instance.getChannel(Configuration.instance().advanced.chatOutputChannelID);
             if (channel == null) {
                 return message;
             }
             discord_instance.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, text, true), channel);
-            final String json = Text.Serializer.toJson(message.getContent());
+            final String json = Text.Serializer.toJson(message);
             Component comp = GsonComponentSerializer.gson().deserialize(json);
             final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
-            final MutableText txt = Text.Serializer.fromJson(editedJson);
-            //message = message.withUnsignedContent(txt);
-            message = SignedMessage.ofUnsigned(new DecoratedContents(txt.getString(),txt));
+
+            message = Text.Serializer.fromJson(editedJson);
         }
         return message;
     }
@@ -87,9 +86,9 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
                 ServerLifecycleEvents.SERVER_STOPPED.register(this::serverStopped);
                 ServerLifecycleEvents.SERVER_STOPPING.register(this::serverStopping);
 
-                /*if (CompatibilityUtils.styledChatLoaded()) {
-                    //StyledChatEvents.PRE_MESSAGE_CONTENT.register(this::styledChat);
-                }*/
+                if (CompatibilityUtils.styledChatLoaded()) {
+                    StyledChatEvents.MESSAGE_CONTENT_SEND.register(this::styledChat);
+                }
             } else {
                 System.err.println("Please check the config file and set an bot token");
             }
@@ -103,6 +102,41 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
         }
     }
 
+    private Text styledChat(Text txt, ServerPlayerEntity player, boolean filtered) {
+        if (PlayerLinkController.getSettings(null, player.getUuid()).hideFromDiscord || filtered) {
+            return txt;
+        }
+
+        Text finalTxt = txt;
+        boolean cancelled = discord_instance.callEvent((e) -> {
+            if (e instanceof FabricDiscordEventHandler) {
+                return ((FabricDiscordEventHandler) e).onMcChatMessage(finalTxt, player);
+            }
+            return false;
+        });
+
+        if (cancelled) {
+            return txt;
+        }
+
+        String messageText = MessageUtils.escapeMarkdown(txt.getString());
+        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(txt);
+        if (discord_instance != null) {
+            TextChannel channel = discord_instance.getChannel(Configuration.instance().advanced.chatOutputChannelID);
+            if (channel == null) {
+                return txt;
+            }
+            discord_instance.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, messageText, true), channel);
+
+            final String json = Text.Serializer.toJson(txt);
+            Component comp = GsonComponentSerializer.gson().deserialize(json);
+            final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
+
+            txt = Text.Serializer.fromJson(editedJson);
+        }
+
+        return txt;
+    }
     private void serverStarting(MinecraftServer minecraftServer) {
         discord_instance = new Discord(new FabricServerInterface(minecraftServer));
         try {

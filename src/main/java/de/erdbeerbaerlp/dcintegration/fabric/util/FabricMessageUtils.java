@@ -19,7 +19,7 @@ import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableTextContent;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
@@ -49,14 +49,14 @@ public class FabricMessageUtils extends MessageUtils {
                             if (hoverEvent.getAsJsonObject("contents").has("tag")) {
                                 final JsonObject item = hoverEvent.getAsJsonObject("contents").getAsJsonObject();
                                 try {
-                                    final ItemStack is = new ItemStack(ItemStackArgumentType.itemStack(null).parse(new StringReader(item.get("id").getAsString())).getItem());
+                                    final ItemStack is = new ItemStack(ItemStackArgumentType.itemStack().parse(new StringReader(item.get("id").getAsString())).getItem());
                                     if (item.has("tag")) {
                                         final NbtCompound tag = NbtCompoundArgumentType.nbtCompound().parse(new StringReader(item.get("tag").getAsString()));
                                         is.setNbt(tag);
                                     }
                                     final NbtCompound itemTag = is.getOrCreateNbt();
                                     final EmbedBuilder b = new EmbedBuilder();
-                                    String title = is.hasCustomName() ? is.getName().getString() : new TranslatableTextContent(is.getItem().getTranslationKey()).toString();
+                                    String title = is.hasCustomName() ? is.getName().getString() : new TranslatableText(is.getItem().getTranslationKey()).toString();
                                     if (title.isEmpty())
                                         title = is.getItem().getTranslationKey().toString();
                                     else

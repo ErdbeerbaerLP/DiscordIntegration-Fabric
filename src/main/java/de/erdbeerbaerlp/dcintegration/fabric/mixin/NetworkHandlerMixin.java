@@ -8,17 +8,16 @@ import de.erdbeerbaerlp.dcintegration.common.util.DiscordMessage;
 import de.erdbeerbaerlp.dcintegration.common.util.MessageUtils;
 import de.erdbeerbaerlp.dcintegration.fabric.DiscordIntegration;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
-import net.minecraft.network.packet.c2s.play.CommandExecutionC2SPacket;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import org.apache.commons.lang3.ArrayUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.regex.Pattern;
 
@@ -34,17 +33,16 @@ public class NetworkHandlerMixin {
      */
     @Inject(method = "disconnect", at = @At("HEAD"))
     private void onDisconnect(final Text textComponent, CallbackInfo ci) {
-        if (textComponent.equals(Text.translatable("disconnect.timeout")))
+        if (textComponent.equals(new TranslatableText("disconnect.timeout")))
             DiscordIntegration.timeouts.add(this.player.getUuid());
     }
 
 
     // Just after the command is executed
-    @Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;submit(Ljava/lang/Runnable;)Ljava/util/concurrent/CompletableFuture;"),
-            method = "onCommandExecution", locals = LocalCapture.CAPTURE_FAILSOFT)
-    private void onCommandExecuted(CommandExecutionC2SPacket packet, CallbackInfo ci) {
+    @Inject(at = @At(value = "TAIL"), method = "executeCommand")
+    private void onCommandExecuted(String input, CallbackInfo ci) {
 
-        final String command = packet.command().replaceFirst(Pattern.quote("/"), "");
+        final String command = input.replaceFirst(Pattern.quote("/"), "");
         if (!Configuration.instance().commandLog.channelID.equals("0")) {
             if (!ArrayUtils.contains(Configuration.instance().commandLog.ignoredCommands, command.split(" ")[0]))
                 discord_instance.sendMessage(Configuration.instance().commandLog.message

@@ -9,8 +9,7 @@
     "NetworkHandlerMixin",
     "ServerPlayerEntityMixin",
     "PlayerManagerMixin",
-    "ChatMixin",
-    "StyledChatMixin"
+    "ChatMixin"
   ],
   "injectors": {
     "defaultRequire": 1
