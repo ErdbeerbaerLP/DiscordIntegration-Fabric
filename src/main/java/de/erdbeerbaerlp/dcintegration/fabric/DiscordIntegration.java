@@ -13,10 +13,9 @@ import de.erdbeerbaerlp.dcintegration.fabric.command.McCommandDiscord;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricServerInterface;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.StandardGuildMessageChannel;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.network.message.DecoratedContents;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -50,7 +49,7 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
             return message;
         }
 
-        SignedMessage finalMessage = message;
+        final SignedMessage finalMessage = message;
         if (discord_instance.callEvent((e) -> {
             if (e instanceof FabricDiscordEventHandler) {
                 return ((FabricDiscordEventHandler) e).onMcChatMessage(finalMessage.getContent(), player);
@@ -59,20 +58,20 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
         })) {
             return message;
         }
-        String text = MessageUtils.escapeMarkdown(message.getContent().getString());
+        final String text = MessageUtils.escapeMarkdown(message.getContent().getString());
         final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(message.getContent());
         if (discord_instance != null) {
-            TextChannel channel = discord_instance.getChannel(Configuration.instance().advanced.chatOutputChannelID);
+            final StandardGuildMessageChannel channel = discord_instance.getChannel(Configuration.instance().advanced.chatOutputChannelID);
             if (channel == null) {
                 return message;
             }
             discord_instance.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, text, true), channel);
             final String json = Text.Serializer.toJson(message.getContent());
-            Component comp = GsonComponentSerializer.gson().deserialize(json);
+            final Component comp = GsonComponentSerializer.gson().deserialize(json);
             final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
             final MutableText txt = Text.Serializer.fromJson(editedJson);
             //message = message.withUnsignedContent(txt);
-            message = SignedMessage.ofUnsigned(new DecoratedContents(txt.getString(),txt));
+            message = SignedMessage.ofUnsigned(txt.getString());
         }
         return message;
     }
@@ -86,10 +85,6 @@ public class DiscordIntegration implements DedicatedServerModInitializer {
                 ServerLifecycleEvents.SERVER_STARTING.register(this::serverStarting);
                 ServerLifecycleEvents.SERVER_STOPPED.register(this::serverStopped);
                 ServerLifecycleEvents.SERVER_STOPPING.register(this::serverStopping);
-
-                /*if (CompatibilityUtils.styledChatLoaded()) {
-                    //StyledChatEvents.PRE_MESSAGE_CONTENT.register(this::styledChat);
-                }*/
             } else {
                 System.err.println("Please check the config file and set an bot token");
             }

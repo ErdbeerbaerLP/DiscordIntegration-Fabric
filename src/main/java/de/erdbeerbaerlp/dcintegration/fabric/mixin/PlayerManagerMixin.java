@@ -42,7 +42,8 @@ public class PlayerManagerMixin {
                     cir.setReturnValue(Text.of(Localization.instance().linking.notWhitelistedRole));
                 }
             } catch (IllegalStateException e) {
-                cir.setReturnValue(Text.of("Please check " + Variables.discordDataDir + "LinkedPlayers.json\n\n" + e.toString()));
+                cir.setReturnValue(Text.of("An error occured\nPlease check Server Log for more information\n\n" + e));
+                e.printStackTrace();
             }
         }
     }
