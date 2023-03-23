@@ -13,15 +13,16 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.minecraft.command.argument.NbtCompoundArgumentType;
 import net.minecraft.command.argument.TextArgumentType;
 import net.minecraft.enchantment.Enchantment;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
+import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 
 import java.util.Arrays;
 
@@ -46,7 +47,7 @@ public class FabricMessageUtils extends MessageUtils {
                             if (hoverEvent.getAsJsonObject("contents").has("tag")) {
                                 final JsonObject item = hoverEvent.getAsJsonObject("contents").getAsJsonObject();
                                 try {
-                                    final ItemStack is = new ItemStack(Item.byRawId(item.get("id").getAsInt()));
+                                    final ItemStack is = new ItemStack(Registries.ITEM.get((new Identifier(item.get("id").getAsString()))));
                                     if (item.has("tag")) {
                                         final NbtCompound tag = NbtCompoundArgumentType.nbtCompound().parse(new StringReader(item.get("tag").getAsString()));
                                         is.setNbt(tag);
@@ -55,9 +56,9 @@ public class FabricMessageUtils extends MessageUtils {
                                     final EmbedBuilder b = new EmbedBuilder();
                                     String title = is.hasCustomName() ? is.getName().getString() : new TranslatableTextContent(is.getItem().getTranslationKey()).toString();
                                     if (title.isEmpty())
-                                        title = is.getItem().getTranslationKey().toString();
+                                        title = Text.translatable(is.getItem().getTranslationKey()).getString();
                                     else
-                                        b.setFooter(is.getItem().getTranslationKey().toString());
+                                        b.setFooter(Text.translatable(is.getItem().getTranslationKey()).getString());
                                     b.setTitle(title);
                                     final StringBuilder tooltip = new StringBuilder();
                                     boolean[] flags = new boolean[6]; // Enchantments, Modifiers, Unbreakable, CanDestroy, CanPlace, Other
