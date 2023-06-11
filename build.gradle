@@ -87,7 +87,7 @@ java {
 }
 
 remapJar{
-    classifier = project.minecraft_version
+    archiveClassifier = project.minecraft_version
 }
 
 jar {
