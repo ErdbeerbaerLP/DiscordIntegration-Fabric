@@ -65,7 +65,7 @@ public class FabricServerInterface implements ServerInterface {
                     p.sendMessage(comp, false);
                     if (ping.getKey()) {
                         if (PlayerLinkController.getSettings(null, p.getUuid()).pingSound) {
-                            p.networkHandler.connection.send(new PlaySoundS2CPacket(SoundEvents.BLOCK_NOTE_BLOCK_PLING, SoundCategory.MASTER, p.getPos().x,p.getPos().y,p.getPos().z, 1, 1, server.getOverworld().getSeed()));
+                            p.networkHandler.sendPacket(new PlaySoundS2CPacket(SoundEvents.BLOCK_NOTE_BLOCK_PLING, SoundCategory.MASTER, p.getPos().x,p.getPos().y,p.getPos().z, 1, 1, server.getOverworld().getSeed()));
                         }
                     }
                 }

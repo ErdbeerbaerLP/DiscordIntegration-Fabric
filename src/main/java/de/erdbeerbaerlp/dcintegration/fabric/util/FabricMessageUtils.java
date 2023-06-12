@@ -54,7 +54,7 @@ public class FabricMessageUtils extends MessageUtils {
                                     }
                                     final NbtCompound itemTag = is.getOrCreateNbt();
                                     final EmbedBuilder b = new EmbedBuilder();
-                                    String title = is.hasCustomName() ? is.getName().getString() : new TranslatableTextContent(is.getItem().getTranslationKey()).toString();
+                                    String title = is.hasCustomName() ? is.getName().getString() : Text.translatable(is.getItem().getTranslationKey()).toString();
                                     if (title.isEmpty())
                                         title = Text.translatable(is.getItem().getTranslationKey()).getString();
                                     else

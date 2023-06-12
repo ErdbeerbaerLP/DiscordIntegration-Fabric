@@ -20,7 +20,7 @@ public class AdvancementMixin {
     @Shadow
     ServerPlayerEntity owner;
 
-    @Inject(method = "grantCriterion", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancement/PlayerAdvancementTracker;updateDisplay(Lnet/minecraft/advancement/Advancement;)V"))
+    @Inject(method = "grantCriterion", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancement/PlayerAdvancementTracker;onStatusUpdate(Lnet/minecraft/advancement/Advancement;)V"))
     public void advancement(Advancement advancement, String criterionName, CallbackInfoReturnable<Boolean> cir){
         if (discord_instance == null) return;
         if (PlayerLinkController.getSettings(null, owner.getUuid()).hideFromDiscord) return;
