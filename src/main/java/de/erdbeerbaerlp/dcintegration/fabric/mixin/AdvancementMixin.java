@@ -1,9 +1,12 @@
 package de.erdbeerbaerlp.dcintegration.fabric.mixin;
 
 import de.erdbeerbaerlp.dcintegration.common.DiscordIntegration;
+import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
 import de.erdbeerbaerlp.dcintegration.common.storage.Localization;
 import de.erdbeerbaerlp.dcintegration.common.storage.linking.LinkManager;
+import de.erdbeerbaerlp.dcintegration.common.util.DiscordMessage;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.minecraft.advancement.Advancement;
 import net.minecraft.advancement.PlayerAdvancementTracker;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -22,9 +25,10 @@ public class AdvancementMixin {
     @Inject(method = "grantCriterion", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancement/PlayerAdvancementTracker;onStatusUpdate(Lnet/minecraft/advancement/Advancement;)V"))
     public void advancement(Advancement advancement, String criterionName, CallbackInfoReturnable<Boolean> cir) {
         if (DiscordIntegration.INSTANCE == null) return;
-        if (LinkManager.isPlayerLinked(owner.getUuid())&&LinkManager.getLink(null, owner.getUuid()).settings.hideFromDiscord) return;
-        if (advancement != null && advancement.getDisplay() != null && advancement.getDisplay().shouldAnnounceToChat())
-            DiscordIntegration.INSTANCE.sendMessage(Localization.instance().advancementMessage.replace("%player%",
+        if (LinkManager.isPlayerLinked(owner.getUuid()) && LinkManager.getLink(null, owner.getUuid()).settings.hideFromDiscord)
+            return;
+        if (advancement != null && advancement.getDisplay() != null && advancement.getDisplay().shouldAnnounceToChat()) {
+            final String advString = Localization.instance().advancementMessage.replace("%player%",
                             Formatting.strip(FabricMessageUtils.formatPlayerName(owner)))
                     .replace("%name%",
                             Formatting.strip(advancement
@@ -36,7 +40,15 @@ public class AdvancementMixin {
                                     .getDisplay()
                                     .getDescription()
                                     .getString()))
-                    .replace("\\n", "\n"));
+                    .replace("\\n", "\n");
+            if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.advancementMessage.asEmbed) {
+
+                final EmbedBuilder b = Configuration.instance().embedMode.advancementMessage.toEmbed();
+                b.setDescription(advString);
+                DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.deathsChannelID));
+            } else
+                DiscordIntegration.INSTANCE.sendMessage(advString);
+        }
 
 
     }
