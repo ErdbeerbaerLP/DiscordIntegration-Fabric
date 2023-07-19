@@ -6,14 +6,14 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dcshadow.dev.vankka.mcdiscordreserializer.minecraft.MinecraftSerializer;
 import dcshadow.net.kyori.adventure.text.Component;
 import dcshadow.net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-import de.erdbeerbaerlp.dcintegration.common.DiscordEventListener;
+import de.erdbeerbaerlp.dcintegration.common.DiscordIntegration;
 import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
 import de.erdbeerbaerlp.dcintegration.common.storage.Localization;
-import de.erdbeerbaerlp.dcintegration.common.storage.PlayerLinkController;
+import de.erdbeerbaerlp.dcintegration.common.storage.linking.LinkManager;
 import de.erdbeerbaerlp.dcintegration.common.util.ComponentUtils;
+import de.erdbeerbaerlp.dcintegration.common.util.McServerInterface;
 import de.erdbeerbaerlp.dcintegration.common.util.MessageUtils;
-import de.erdbeerbaerlp.dcintegration.common.util.ServerInterface;
-import de.erdbeerbaerlp.dcintegration.common.util.Variables;
+import de.erdbeerbaerlp.dcintegration.common.util.MinecraftPermission;
 import de.erdbeerbaerlp.dcintegration.fabric.command.DCCommandSender;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class FabricServerInterface implements ServerInterface {
+public class FabricServerInterface implements McServerInterface{
     private final MinecraftServer server;
 
     public FabricServerInterface(MinecraftServer minecraftServer) {
@@ -54,18 +54,18 @@ public class FabricServerInterface implements ServerInterface {
     }
 
     @Override
-    public void sendMCMessage(Component msg) {
+    public void sendIngameMessage(Component msg) {
         final List<ServerPlayerEntity> l = server.getPlayerManager().getPlayerList();
         try {
             for (final ServerPlayerEntity p : l) {
-                if (!Variables.discord_instance.ignoringPlayers.contains(p.getUuid()) && !(PlayerLinkController.isPlayerLinked(p.getUuid()) && PlayerLinkController.getSettings(null, p.getUuid()).ignoreDiscordChatIngame)) {
+                if (!DiscordIntegration.INSTANCE.ignoringPlayers.contains(p.getUuid()) && !(LinkManager.isPlayerLinked(p.getUuid()) && LinkManager.getLink(null, p.getUuid()).settings.ignoreDiscordChatIngame)) {
                     final Map.Entry<Boolean, Component> ping = ComponentUtils.parsePing(msg, p.getUuid(), p.getName().getString());
                     final String jsonComp = GsonComponentSerializer.gson().serialize(ping.getValue()).replace("\\\\n", "\n");
                     final Text comp = TextArgumentType.text().parse(new StringReader(jsonComp));
                     p.sendMessage(comp, false);
                     if (ping.getKey()) {
-                        if (PlayerLinkController.getSettings(null, p.getUuid()).pingSound) {
-                            p.networkHandler.connection.send(new PlaySoundS2CPacket(SoundEvents.BLOCK_NOTE_BLOCK_PLING, SoundCategory.MASTER, p.getPos().x,p.getPos().y,p.getPos().z, 1, 1, server.getOverworld().getSeed()));
+                        if (LinkManager.isPlayerLinked(p.getUuid())&&LinkManager.getLink(null, p.getUuid()).settings.pingSound) {
+                            p.networkHandler.sendPacket(new PlaySoundS2CPacket(SoundEvents.BLOCK_NOTE_BLOCK_PLING, SoundCategory.MASTER, p.getPos().x,p.getPos().y,p.getPos().z, 1, 1, server.getOverworld().getSeed()));
                         }
                     }
                 }
@@ -80,10 +80,10 @@ public class FabricServerInterface implements ServerInterface {
     }
 
     @Override
-    public void sendMCReaction(Member member, RestAction<Message> retrieveMessage, UUID targetUUID, EmojiUnion reactionEmote) {
+    public void sendIngameReaction(Member member, RestAction<Message> retrieveMessage, UUID targetUUID, EmojiUnion reactionEmote) {
         final List<ServerPlayerEntity> l = server.getPlayerManager().getPlayerList();
         for (final ServerPlayerEntity p : l) {
-            if (p.getUuid().equals(targetUUID) && !Variables.discord_instance.ignoringPlayers.contains(p.getUuid()) && !PlayerLinkController.getSettings(null, p.getUuid()).ignoreDiscordChatIngame && !PlayerLinkController.getSettings(null, p.getUuid()).ignoreReactions) {
+            if (p.getUuid().equals(targetUUID) && !DiscordIntegration.INSTANCE.ignoringPlayers.contains(p.getUuid()) && (LinkManager.isPlayerLinked(p.getUuid())&&!LinkManager.getLink(null, p.getUuid()).settings.ignoreDiscordChatIngame && !LinkManager.getLink(null, p.getUuid()).settings.ignoreReactions)) {
 
                 final String emote = ":"+ reactionEmote.getName() + ":";// ? ":" + reactionEmote.getEmote().getName() + ":" : MessageUtils.formatEmoteMessage(new ArrayList<>(), reactionEmote.getEmoji());
                 String outMsg = Localization.instance().reactionMessage.replace("%name%", member.getEffectiveName()).replace("%name2%", member.getUser().getAsTag()).replace("%emote%", emote);
@@ -97,7 +97,7 @@ public class FabricServerInterface implements ServerInterface {
         }
     }
     private void sendReactionMCMessage(ServerPlayerEntity target, String msg) {
-        final Component msgComp = MinecraftSerializer.INSTANCE.serialize(msg.replace("\n", "\\n"), DiscordEventListener.mcSerializerOptions);
+        final Component msgComp = MinecraftSerializer.INSTANCE.serialize(msg.replace("\n", "\\n"), DiscordIntegration.mcSerializerOptions);
         final String jsonComp = GsonComponentSerializer.gson().serialize(msgComp).replace("\\\\n", "\n");
         try {
             final Text comp = TextArgumentType.text().parse(new StringReader(jsonComp));
@@ -124,14 +124,14 @@ public class FabricServerInterface implements ServerInterface {
     @Override
     public HashMap<UUID, String> getPlayers() {
         final HashMap<UUID, String> players = new HashMap<>();
-        for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
+        for (final ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
             players.put(p.getUuid(), p.getDisplayName().getString().isEmpty() ? p.getName().getString() : p.getDisplayName().getString());
         }
         return players;
     }
 
     @Override
-    public void sendMCMessage(String msg, UUID player) {
+    public void sendIngameMessage(String msg, UUID player) {
         final ServerPlayerEntity p = server.getPlayerManager().getPlayer(player);
         if (p != null)
             p.sendMessage( Text.of(msg));
@@ -150,5 +150,15 @@ public class FabricServerInterface implements ServerInterface {
     @Override
     public String getLoaderName() {
         return "Fabric";
+    }
+
+    @Override
+    public boolean playerHasPermissions(UUID player, String... permissions) {
+        return false;
+    }
+
+    @Override
+    public boolean playerHasPermissions(UUID player, MinecraftPermission... permissions) {
+        return McServerInterface.super.playerHasPermissions(player, permissions);
     }
 }

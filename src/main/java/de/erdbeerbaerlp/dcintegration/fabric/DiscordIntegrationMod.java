@@ -1,0 +1,201 @@
+package de.erdbeerbaerlp.dcintegration.fabric;
+
+import dcshadow.net.kyori.adventure.text.Component;
+import dcshadow.net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import de.erdbeerbaerlp.dcintegration.common.DiscordIntegration;
+import de.erdbeerbaerlp.dcintegration.common.storage.CommandRegistry;
+import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
+import de.erdbeerbaerlp.dcintegration.common.storage.Localization;
+import de.erdbeerbaerlp.dcintegration.common.storage.linking.LinkManager;
+import de.erdbeerbaerlp.dcintegration.common.util.*;
+import de.erdbeerbaerlp.dcintegration.fabric.api.FabricDiscordEventHandler;
+import de.erdbeerbaerlp.dcintegration.fabric.command.McCommandDiscord;
+import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
+import de.erdbeerbaerlp.dcintegration.fabric.util.FabricServerInterface;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.fabricmc.api.DedicatedServerModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.network.message.SignedMessage;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+
+import static de.erdbeerbaerlp.dcintegration.common.DiscordIntegration.LOGGER;
+
+public class DiscordIntegrationMod implements DedicatedServerModInitializer {
+    /**
+     * Modid
+     */
+    public static final String MODID = "dcintegration";
+    /**
+     * Contains timed-out player UUIDs, gets filled in MixinNetHandlerPlayServer
+     */
+    public static final ArrayList<UUID> timeouts = new ArrayList<>();
+    public static boolean stopped = false;
+
+    public static SignedMessage handleChatMessage(SignedMessage message, ServerPlayerEntity player) {
+        if (DiscordIntegration.INSTANCE == null) return message;
+        if (LinkManager.isPlayerLinked(player.getUuid()) && LinkManager.getLink(null, player.getUuid()).settings.hideFromDiscord) {
+            return message;
+        }
+
+        final SignedMessage finalMessage = message;
+        if (DiscordIntegration.INSTANCE.callEvent((e) -> {
+            if (e instanceof FabricDiscordEventHandler) {
+                return ((FabricDiscordEventHandler) e).onMcChatMessage(finalMessage.getContent(), player);
+            }
+            return false;
+        })) {
+            return message;
+        }
+        final String text = MessageUtils.escapeMarkdown(message.getContent().getString());
+        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(message.getContent());
+        if (DiscordIntegration.INSTANCE != null) {
+            final GuildMessageChannel channel = DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID);
+            if (channel == null) {
+                return message;
+            }
+            if (!Localization.instance().discordChatMessage.isBlank())
+                if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.chatMessages.asEmbed) {
+
+                    EmbedBuilder b = Configuration.instance().embedMode.chatMessages.toEmbed();
+                    if (Configuration.instance().embedMode.chatMessages.generateUniqueColors)
+                        b = b.setColor(TextColors.generateFromUUID(player.getUuid()));
+                    final String avatarURL = Configuration.instance().webhook.playerAvatarURL.replace("%uuid%", player.getUuid().toString()).replace("%uuid_dashless%", player.getUuid().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
+                    b = b.setAuthor(FabricMessageUtils.formatPlayerName(player), null, avatarURL)
+                            .setDescription(text);
+                    DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                } else
+                    DiscordIntegration.INSTANCE.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, text, true), channel);
+            final String json = Text.Serializer.toJson(message.getContent());
+            final Component comp = GsonComponentSerializer.gson().deserialize(json);
+            final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
+            final MutableText txt = Text.Serializer.fromJson(editedJson);
+            //message = message.withUnsignedContent(txt);
+            message = SignedMessage.ofUnsigned(txt.getString());
+        }
+        return message;
+    }
+
+    @Override
+    public void onInitializeServer() {
+        try {
+            DiscordIntegration.loadConfigs();
+            ServerLifecycleEvents.SERVER_STARTED.register(this::serverStarted);
+            if (!Configuration.instance().general.botToken.equals("INSERT BOT TOKEN HERE")) {
+                ServerLifecycleEvents.SERVER_STARTING.register(this::serverStarting);
+                ServerLifecycleEvents.SERVER_STOPPED.register(this::serverStopped);
+                ServerLifecycleEvents.SERVER_STOPPING.register(this::serverStopping);
+            } else {
+                System.err.println("Please check the config file and set an bot token");
+            }
+        } catch (IOException e) {
+            System.err.println("Config loading failed");
+            e.printStackTrace();
+        } catch (IllegalStateException e) {
+            System.err.println("Failed to read config file! Please check your config file!\nError description: " + e.getMessage());
+            System.err.println("\nStacktrace: ");
+            e.printStackTrace();
+        }
+    }
+
+    private void serverStarting(MinecraftServer minecraftServer) {
+        DiscordIntegration.INSTANCE = new DiscordIntegration(new FabricServerInterface(minecraftServer));
+        try {
+            //Wait a short time to allow JDA to get initiaized
+            System.out.println("Waiting for JDA to initialize to send starting message... (max 5 seconds before skipping)");
+            for (int i = 0; i <= 5; i++) {
+                if (DiscordIntegration.INSTANCE.getJDA() == null) Thread.sleep(1000);
+                else break;
+            }
+            if (DiscordIntegration.INSTANCE.getJDA() != null) {
+                Thread.sleep(2000); //Wait for it to cache the channels
+                CommandRegistry.registerDefaultCommands();
+                if (!Localization.instance().serverStarting.isEmpty()) {
+
+                    if (!Localization.instance().serverStarting.isBlank())
+                        if (DiscordIntegration.INSTANCE.getChannel() != null) {
+                            final MessageCreateData m;
+                            if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.startMessages.asEmbed)
+                                m = new MessageCreateBuilder().setEmbeds(Configuration.instance().embedMode.startMessages.toEmbed().setDescription(Localization.instance().serverStarting).build()).build();
+                            else
+                                m = new MessageCreateBuilder().addContent(Localization.instance().serverStarting).build();
+                            DiscordIntegration.startingMsg = DiscordIntegration.INSTANCE.sendMessageReturns(m, DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
+                        }
+                }
+            }
+        } catch (InterruptedException | NullPointerException ignored) {
+        }
+        new McCommandDiscord(minecraftServer.getCommandManager().getDispatcher());
+    }
+
+    private void serverStarted(MinecraftServer minecraftServer) {
+        System.out.println("Started");
+        if (DiscordIntegration.INSTANCE != null) {
+            DiscordIntegration.started = new Date().getTime();
+            if (!Localization.instance().serverStarted.isBlank())
+                if (DiscordIntegration.startingMsg != null) {
+                    if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.startMessages.asEmbed)
+
+                        DiscordIntegration.startingMsg.thenAccept((a) -> a.editMessageEmbeds(Configuration.instance().embedMode.startMessages.toEmbed().setDescription(Localization.instance().serverStarted).build()).queue());
+                    else
+                        DiscordIntegration.startingMsg.thenAccept((a) -> a.editMessage(Localization.instance().serverStarted).queue());
+                } else {
+                    if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.startMessages.asEmbed)
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(Configuration.instance().embedMode.startMessages.toEmbed().setDescription(Localization.instance().serverStarted).build()));
+                    else
+                        DiscordIntegration.INSTANCE.sendMessage(Localization.instance().serverStarted);
+                }
+            DiscordIntegration.INSTANCE.startThreads();
+        }
+        UpdateChecker.runUpdateCheck("https://raw.githubusercontent.com/ErdbeerbaerLP/Discord-Integration-Fabric/1.20.1/update-checker.json");
+        if (!DownloadSourceChecker.checkDownloadSource(new File(DiscordIntegrationMod.class.getProtectionDomain().getCodeSource().getLocation().getPath().split("%")[0]))) {
+            LOGGER.warn("You likely got this mod from a third party website.");
+            LOGGER.warn("Some of such websites are distributing malware or old versions.");
+            LOGGER.warn("Download this mod from an official source (https://www.curseforge.com/minecraft/mc-mods/dcintegration) to hide this message");
+            LOGGER.warn("This warning can also be suppressed in the config file");
+        }
+    }
+
+    private void serverStopping(MinecraftServer minecraftServer) {
+        if (DiscordIntegration.INSTANCE != null) {
+            if (!Localization.instance().serverStopped.isBlank())
+                if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.stopMessages.asEmbed)
+                    DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(Configuration.instance().embedMode.stopMessages.toEmbed().setDescription(Localization.instance().serverStopped).build()));
+                else
+                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().serverStopped);
+            DiscordIntegration.INSTANCE.stopThreads();
+        }
+        stopped = true;
+    }
+
+    private void serverStopped(MinecraftServer minecraftServer) {
+        if (DiscordIntegration.INSTANCE != null) {
+            if (!stopped && DiscordIntegration.INSTANCE.getJDA() != null) minecraftServer.execute(() -> {
+                DiscordIntegration.INSTANCE.stopThreads();
+                if (!Localization.instance().serverCrash.isBlank())
+                    try {
+                        if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.stopMessages.asEmbed)
+                            DiscordIntegration.INSTANCE.sendMessageReturns(new MessageCreateBuilder().addEmbeds(Configuration.instance().embedMode.stopMessages.toEmbed().setDescription(Localization.instance().serverCrash).build()).build(), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID)).get();
+                        else
+                            DiscordIntegration.INSTANCE.sendMessageReturns(new MessageCreateBuilder().setContent(Localization.instance().serverCrash).build(), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID)).get();
+                    } catch (InterruptedException | ExecutionException ignored) {
+                    }
+            });
+            DiscordIntegration.INSTANCE.kill(false);
+        }
+    }
+
+}

@@ -1,6 +1,6 @@
 package de.erdbeerbaerlp.dcintegration.fabric.mixin;
 
-import de.erdbeerbaerlp.dcintegration.fabric.DiscordIntegration;
+import de.erdbeerbaerlp.dcintegration.fabric.DiscordIntegrationMod;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.PlayerManager;
@@ -18,7 +18,7 @@ public class ChatMixin {
      */
     @Redirect(method = "handleDecoratedMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/network/message/SignedMessage;Lnet/minecraft/server/network/ServerPlayerEntity;Lnet/minecraft/network/message/MessageType$Parameters;)V"))
     public void chatMessage(PlayerManager instance, SignedMessage signedMessage, ServerPlayerEntity sender, MessageType.Parameters params) {
-        signedMessage = DiscordIntegration.handleChatMessage(signedMessage, sender);
+        signedMessage = DiscordIntegrationMod.handleChatMessage(signedMessage, sender);
         instance.broadcast(signedMessage, sender, params);
 
     }

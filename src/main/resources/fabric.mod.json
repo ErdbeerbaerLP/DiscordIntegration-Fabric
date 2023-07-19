@@ -10,7 +10,7 @@
   "environment": "server",
   "entrypoints": {
     "server": [
-      "de.erdbeerbaerlp.dcintegration.fabric.DiscordIntegration"
+      "de.erdbeerbaerlp.dcintegration.fabric.DiscordIntegrationMod"
     ]
   },
   "mixins": [
@@ -19,6 +19,6 @@
   "depends": {
     "fabricloader": ">=0.14.8",
     "fabric": "*",
-    "minecraft": "~1.19"
+    "minecraft": "~1.20"
   }
 }

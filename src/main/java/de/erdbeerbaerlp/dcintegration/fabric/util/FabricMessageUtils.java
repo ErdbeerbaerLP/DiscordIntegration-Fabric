@@ -12,7 +12,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.minecraft.command.argument.NbtCompoundArgumentType;
 import net.minecraft.command.argument.TextArgumentType;
-import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
@@ -54,11 +54,11 @@ public class FabricMessageUtils extends MessageUtils {
                                     }
                                     final NbtCompound itemTag = is.getOrCreateNbt();
                                     final EmbedBuilder b = new EmbedBuilder();
-                                    String title = is.hasCustomName() ? is.getName().getString() : new TranslatableTextContent(is.getItem().getTranslationKey()).toString();
+                                    String title = is.hasCustomName() ? is.getName().getString() : new TranslatableTextContent(is.getItem().getTranslationKey(), is.getItem().getName().getString(),null).toString();
                                     if (title.isEmpty())
                                         title = Text.translatable(is.getItem().getTranslationKey()).getString();
                                     else
-                                        b.setFooter(Text.translatable(is.getItem().getTranslationKey()).getString());
+                                        b.setFooter(is.getRegistryEntry().getKeyOrValue().left().get().getValue().toString());
                                     b.setTitle(title);
                                     final StringBuilder tooltip = new StringBuilder();
                                     boolean[] flags = new boolean[6]; // Enchantments, Modifiers, Unbreakable, CanDestroy, CanPlace, Other
@@ -72,18 +72,9 @@ public class FabricMessageUtils extends MessageUtils {
                                     }
                                     //Add Enchantments
                                     if (!flags[0]) {
-                                        for (int i = 0; i < is.getEnchantments().size(); ++i) {
-                                            final NbtCompound compoundnbt = is.getEnchantments().getCompound(i);
-                                            final Enchantment ench = Enchantment.byRawId(compoundnbt.getInt("id"));
-                                            if (compoundnbt.get("lvl") != null) {
-                                                    final int level;
-                                                    if (compoundnbt.get("lvl") instanceof NbtString) {
-                                                        level = Integer.parseInt(compoundnbt.getString("lvl").replace("s", ""));
-                                                    } else
-                                                        level = compoundnbt.getInt("lvl") == 0 ? compoundnbt.getShort("lvl") : compoundnbt.getInt("lvl");
-                                                    tooltip.append(Formatting.strip(ench.getName(level).getString())).append("\n");
-                                                }
-                                        }
+                                        EnchantmentHelper.fromNbt(is.getEnchantments()).forEach((ench,level)->{
+                                                tooltip.append(Formatting.strip(ench.getName(level).getString())).append("\n");
+                                        });
                                     }
                                     //Add Lores
                                     final NbtList list = itemTag.getCompound("display").getList("Lore", 8);

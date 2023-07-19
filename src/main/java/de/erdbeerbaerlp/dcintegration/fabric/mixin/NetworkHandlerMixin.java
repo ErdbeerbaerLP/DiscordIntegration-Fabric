@@ -1,10 +1,14 @@
 package de.erdbeerbaerlp.dcintegration.fabric.mixin;
 
 
+import de.erdbeerbaerlp.dcintegration.common.DiscordIntegration;
+import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
 import de.erdbeerbaerlp.dcintegration.common.storage.Localization;
-import de.erdbeerbaerlp.dcintegration.common.storage.PlayerLinkController;
-import de.erdbeerbaerlp.dcintegration.fabric.DiscordIntegration;
+import de.erdbeerbaerlp.dcintegration.common.storage.linking.LinkManager;
+import de.erdbeerbaerlp.dcintegration.common.util.DiscordMessage;
+import de.erdbeerbaerlp.dcintegration.fabric.DiscordIntegrationMod;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -14,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import static de.erdbeerbaerlp.dcintegration.common.util.Variables.discord_instance;
+import java.util.UUID;
 
 @Mixin(value=ServerPlayNetworkHandler.class)
 public class NetworkHandlerMixin {
@@ -27,18 +31,34 @@ public class NetworkHandlerMixin {
     @Inject(method = "disconnect", at = @At("HEAD"))
     private void onDisconnect(final Text textComponent, CallbackInfo ci) {
         if (textComponent.equals(Text.translatable("disconnect.timeout")))
-            DiscordIntegration.timeouts.add(this.player.getUuid());
+            DiscordIntegrationMod.timeouts.add(this.player.getUuid());
     }
 
     @Inject(at = @At(value = "HEAD"), method = "onDisconnected")
     private void onPlayerLeave(Text reason, CallbackInfo info) {
-        if (DiscordIntegration.stopped) return; //Try to fix player leave messages after stop!
-        if (PlayerLinkController.getSettings(null, player.getUuid()).hideFromDiscord) return;
-        if (discord_instance != null && !DiscordIntegration.timeouts.contains(player.getUuid()))
-            discord_instance.sendMessage(Localization.instance().playerLeave.replace("%player%", FabricMessageUtils.formatPlayerName(player)));
-        else if (discord_instance != null && DiscordIntegration.timeouts.contains(player.getUuid())) {
-            discord_instance.sendMessage(Localization.instance().playerTimeout.replace("%player%", FabricMessageUtils.formatPlayerName(player)));
-            DiscordIntegration.timeouts.remove(player.getUuid());
+        if (DiscordIntegrationMod.stopped) return; //Try to fix player leave messages after stop!
+        if (LinkManager.isPlayerLinked(player.getUuid())&&LinkManager.getLink(null, player.getUuid()).settings.hideFromDiscord) return;
+        if (DiscordIntegration.INSTANCE != null && !DiscordIntegrationMod.timeouts.contains(player.getUuid())) {
+            if (!Localization.instance().playerLeave.isBlank()) {
+                if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.playerLeaveMessages.asEmbed) {
+                    EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbed();
+                    b = b.setAuthor(FabricMessageUtils.formatPlayerName(player), null, Configuration.instance().webhook.playerAvatarURL.replace("%uuid%", player.getUuid().toString()).replace("%uuid_dashless%", player.getUuid().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString()))
+                            .setDescription(Localization.instance().playerLeave.replace("%player%", FabricMessageUtils.formatPlayerName(player)));
+                    DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                } else
+                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerLeave.replace("%player%", FabricMessageUtils.formatPlayerName(player)));
+            }
+        } else if (DiscordIntegration.INSTANCE != null && DiscordIntegrationMod.timeouts.contains(player.getUuid())) {
+            if (!Localization.instance().playerTimeout.isBlank()) {
+                if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.playerLeaveMessages.asEmbed) {
+                    EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbed();
+                    b = b.setAuthor(FabricMessageUtils.formatPlayerName(player), null, Configuration.instance().webhook.playerAvatarURL.replace("%uuid%", player.getUuid().toString()).replace("%uuid_dashless%", player.getUuid().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString()))
+                            .setDescription(Localization.instance().playerTimeout.replace("%player%", FabricMessageUtils.formatPlayerName(player)));
+                    DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                } else
+                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerTimeout.replace("%player%", FabricMessageUtils.formatPlayerName(player)));
+            }
+            DiscordIntegrationMod.timeouts.remove(player.getUuid());
         }
     }
 }
