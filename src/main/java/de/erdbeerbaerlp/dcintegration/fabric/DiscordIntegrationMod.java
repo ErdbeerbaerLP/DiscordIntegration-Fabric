@@ -19,6 +19,7 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.minecraft.network.message.DecoratedContents;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -96,7 +97,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
             final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
             final MutableText txt = Text.Serializer.fromJson(editedJson);
             //message = message.withUnsignedContent(txt);
-            message = SignedMessage.ofUnsigned(txt.getString());
+            message = SignedMessage.ofUnsigned(new DecoratedContents(txt.getString(),txt));
         }
         return message;
     }

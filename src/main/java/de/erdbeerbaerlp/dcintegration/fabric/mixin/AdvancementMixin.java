@@ -25,7 +25,7 @@ public class AdvancementMixin {
     @Shadow
     ServerPlayerEntity owner;
 
-    @Inject(method = "grantCriterion", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancement/PlayerAdvancementTracker;onStatusUpdate(Lnet/minecraft/advancement/Advancement;)V"))
+    @Inject(method = "grantCriterion", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancement/PlayerAdvancementTracker;updateDisplay(Lnet/minecraft/advancement/Advancement;)V"))
     public void advancement(Advancement advancement, String criterionName, CallbackInfoReturnable<Boolean> cir) {
         if (DiscordIntegration.INSTANCE == null) return;
         if (LinkManager.isPlayerLinked(owner.getUuid()) && LinkManager.getLink(null, owner.getUuid()).settings.hideFromDiscord)
@@ -44,14 +44,23 @@ public class AdvancementMixin {
                                 .replace("%avatarURL%", avatarURL)
                                 .replace("%advName%", Formatting.strip(advancement.getDisplay().getTitle().getString()))
                                 .replace("%advDesc%", Formatting.strip(advancement.getDisplay().getDescription().getString()))
-                                .replace("%avatarURL%", avatarURL)
                                 .replace("%playerColor%", "" + TextColors.generateFromUUID(owner.getUuid()).getRGB())
                         );
                         DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
                     } else {
                         EmbedBuilder b = Configuration.instance().embedMode.advancementMessage.toEmbed();
                         b = b.setAuthor(FabricMessageUtils.formatPlayerName(owner), null, avatarURL)
-                                .setDescription(Localization.instance().advancementMessage.replace("%player%", FabricMessageUtils.formatPlayerName(owner)));
+                                .setDescription(Localization.instance().advancementMessage.replace("%name%",
+                                                Formatting.strip(advancement
+                                                        .getDisplay()
+                                                        .getTitle()
+                                                        .getString()))
+                                        .replace("%desc%",
+                                                Formatting.strip(advancement
+                                                        .getDisplay()
+                                                        .getDescription()
+                                                        .getString()))
+                                        .replace("\\n", "\n"));
                         DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
                     }
                 } else
