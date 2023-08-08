@@ -10,8 +10,10 @@ import de.erdbeerbaerlp.dcintegration.common.storage.linking.LinkManager;
 import de.erdbeerbaerlp.dcintegration.common.util.*;
 import de.erdbeerbaerlp.dcintegration.fabric.api.FabricDiscordEventHandler;
 import de.erdbeerbaerlp.dcintegration.fabric.command.McCommandDiscord;
+import de.erdbeerbaerlp.dcintegration.fabric.util.CompatibilityUtils;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricServerInterface;
+import eu.pb4.styledchat.StyledChatEvents;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
@@ -19,11 +21,8 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.network.message.DecoratedContents;
-import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
 import java.io.File;
@@ -47,7 +46,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
     public static final ArrayList<UUID> timeouts = new ArrayList<>();
     public static boolean stopped = false;
 
-    public static SignedMessage handleChatMessage(SignedMessage message, ServerPlayerEntity player) {
+    public static Text handleChatMessage(Text message, ServerPlayerEntity player) {
         if (DiscordIntegration.INSTANCE == null) return message;
         if (!((FabricServerInterface)DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(player, MinecraftPermission.SEMD_MESSAGES, MinecraftPermission.USER))
             return message;
@@ -55,17 +54,17 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
             return message;
         }
 
-        final SignedMessage finalMessage = message;
+        final Text finalMessage = message;
         if (DiscordIntegration.INSTANCE.callEvent((e) -> {
             if (e instanceof FabricDiscordEventHandler) {
-                return ((FabricDiscordEventHandler) e).onMcChatMessage(finalMessage.getContent(), player);
+                return ((FabricDiscordEventHandler) e).onMcChatMessage(finalMessage, player);
             }
             return false;
         })) {
             return message;
         }
-        final String text = MessageUtils.escapeMarkdown(message.getContent().getString());
-        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(message.getContent());
+        final String text = MessageUtils.escapeMarkdown(message.getString());
+        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(message);
         if (DiscordIntegration.INSTANCE != null) {
             final GuildMessageChannel channel = DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID);
             if (channel == null) {
@@ -96,17 +95,51 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                 } else
                     DiscordIntegration.INSTANCE.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, text, true), channel);
             if (!Configuration.instance().compatibility.disableParsingMentionsIngame) {
-                final String json = Text.Serializer.toJson(message.getContent());
+                final String json = Text.Serializer.toJson(message);
                 final Component comp = GsonComponentSerializer.gson().deserialize(json);
                 final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
                 final MutableText txt = Text.Serializer.fromJson(editedJson);
 
-                message = SignedMessage.ofUnsigned(new DecoratedContents(txt.getString(),txt));
+                message = Text.Serializer.fromJson(editedJson);
             }
         }
         return message;
     }
+    private Text styledChat(Text txt, ServerPlayerEntity player, boolean filtered) {
+        if ((LinkManager.isPlayerLinked(player.getUuid()) && LinkManager.getLink(null, player.getUuid()).settings.hideFromDiscord) || filtered) {
+            return txt;
+        }
 
+        Text finalTxt = txt;
+        boolean cancelled = DiscordIntegration.INSTANCE.callEvent((e) -> {
+            if (e instanceof FabricDiscordEventHandler) {
+                return ((FabricDiscordEventHandler) e).onMcChatMessage(finalTxt, player);
+            }
+            return false;
+        });
+
+        if (cancelled) {
+            return txt;
+        }
+
+        String messageText = MessageUtils.escapeMarkdown(txt.getString());
+        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(txt);
+        if (DiscordIntegration.INSTANCE != null) {
+            GuildMessageChannel channel = DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID);
+            if (channel == null) {
+                return txt;
+            }
+            DiscordIntegration.INSTANCE.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, messageText, true), channel);
+
+            final String json = Text.Serializer.toJson(txt);
+            Component comp = GsonComponentSerializer.gson().deserialize(json);
+            final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
+
+            txt = Text.Serializer.fromJson(editedJson);
+        }
+
+        return txt;
+    }
     @Override
     public void onInitializeServer() {
         try {
@@ -116,6 +149,9 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                 ServerLifecycleEvents.SERVER_STARTING.register(this::serverStarting);
                 ServerLifecycleEvents.SERVER_STOPPED.register(this::serverStopped);
                 ServerLifecycleEvents.SERVER_STOPPING.register(this::serverStopping);
+                if (CompatibilityUtils.styledChatLoaded()) {
+                    StyledChatEvents.MESSAGE_CONTENT_SEND.register(this::styledChat);
+                }
             } else {
                 DiscordIntegration.LOGGER.error("Please check the config file and set an bot token");
             }

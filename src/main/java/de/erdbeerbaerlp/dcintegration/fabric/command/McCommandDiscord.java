@@ -16,7 +16,7 @@ public class McCommandDiscord {
     public McCommandDiscord(CommandDispatcher<ServerCommandSource> dispatcher) {
         final LiteralArgumentBuilder<ServerCommandSource> l = CommandManager.literal("discord");
         if (Configuration.instance().ingameCommand.enabled) l.executes((ctx) -> {
-            ctx.getSource().sendFeedback( Texts.setStyleIfAbsent(Text.literal(Configuration.instance().ingameCommand.message),
+            ctx.getSource().sendFeedback( Texts.setStyleIfAbsent(new LiteralText(Configuration.instance().ingameCommand.message),
                     Style.EMPTY.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of(Configuration.instance().ingameCommand.hoverMessage)))
                             .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, Configuration.instance().ingameCommand.inviteURL))), false);
             return 0;

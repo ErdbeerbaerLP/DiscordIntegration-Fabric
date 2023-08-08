@@ -19,7 +19,7 @@ import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableTextContent;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
@@ -54,11 +54,11 @@ public class FabricMessageUtils extends MessageUtils {
                                     }
                                     final NbtCompound itemTag = is.getOrCreateNbt();
                                     final EmbedBuilder b = new EmbedBuilder();
-                                    String title = is.hasCustomName() ? is.getName().getString() : new TranslatableTextContent(is.getItem().getTranslationKey(), is.getItem().getName().getString(),null).toString();
+                                    String title = is.hasCustomName() ? is.getName().getString() : new TranslatableText(is.getItem().getTranslationKey(), is.getItem().getName().getString(),null).toString();
                                     if (title.isEmpty())
-                                        title = Text.translatable(is.getItem().getTranslationKey()).getString();
+                                        title = new TranslatableText(is.getItem().getTranslationKey()).getString();
                                     else
-                                        b.setFooter(is.getRegistryEntry().getKeyOrValue().left().get().getValue().toString());
+                                        b.setFooter(is.getItem().getRegistryEntry().getKeyOrValue().left().get().getValue().toString());
                                     b.setTitle(title);
                                     final StringBuilder tooltip = new StringBuilder();
                                     boolean[] flags = new boolean[6]; // Enchantments, Modifiers, Unbreakable, CanDestroy, CanPlace, Other
