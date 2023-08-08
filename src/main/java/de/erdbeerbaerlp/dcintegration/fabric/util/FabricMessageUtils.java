@@ -17,12 +17,12 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
-import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.Registry;
 
 import java.util.Arrays;
 
@@ -47,7 +47,7 @@ public class FabricMessageUtils extends MessageUtils {
                             if (hoverEvent.getAsJsonObject("contents").has("tag")) {
                                 final JsonObject item = hoverEvent.getAsJsonObject("contents").getAsJsonObject();
                                 try {
-                                    final ItemStack is = new ItemStack(Registries.ITEM.get((new Identifier(item.get("id").getAsString()))));
+                                    final ItemStack is = new ItemStack(Registry.ITEM.get((new Identifier(item.get("id").getAsString()))));
                                     if (item.has("tag")) {
                                         final NbtCompound tag = NbtCompoundArgumentType.nbtCompound().parse(new StringReader(item.get("tag").getAsString()));
                                         is.setNbt(tag);
