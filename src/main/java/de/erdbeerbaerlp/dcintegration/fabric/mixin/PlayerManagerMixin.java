@@ -6,6 +6,7 @@ import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
 import de.erdbeerbaerlp.dcintegration.common.storage.Localization;
 import de.erdbeerbaerlp.dcintegration.common.storage.linking.LinkManager;
 import de.erdbeerbaerlp.dcintegration.common.util.DiscordMessage;
+import de.erdbeerbaerlp.dcintegration.common.util.TextColors;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -54,12 +55,26 @@ public class PlayerManagerMixin {
         if (DiscordIntegration.INSTANCE != null) {
             if (LinkManager.isPlayerLinked(p.getUuid()) && LinkManager.getLink(null, p.getUuid()).settings.hideFromDiscord)
                 return;
+            LinkManager.checkGlobalAPI(p.getUuid());
             if (!Localization.instance().playerJoin.isBlank()) {
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.playerJoinMessage.asEmbed) {
-                    final EmbedBuilder b = Configuration.instance().embedMode.playerJoinMessage.toEmbed();
-                    b.setAuthor(FabricMessageUtils.formatPlayerName(p), null, Configuration.instance().webhook.playerAvatarURL.replace("%uuid%", p.getUuid().toString()).replace("%uuid_dashless%", p.getUuid().toString().replace("-", "")).replace("%name%", p.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString()))
-                            .setDescription(Localization.instance().playerJoin.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
-                    DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                    final String avatarURL = Configuration.instance().webhook.playerAvatarURL.replace("%uuid%", p.getUuid().toString()).replace("%uuid_dashless%", p.getUuid().toString().replace("-", "")).replace("%name%", p.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
+                    if (!Configuration.instance().embedMode.playerJoinMessage.customJSON.isBlank()) {
+                        final EmbedBuilder b = Configuration.instance().embedMode.playerJoinMessage.toEmbedJson(Configuration.instance().embedMode.playerJoinMessage.customJSON
+                                .replace("%uuid%", p.getUuid().toString())
+                                .replace("%uuid_dashless%", p.getUuid().toString().replace("-", ""))
+                                .replace("%name%", FabricMessageUtils.formatPlayerName(p))
+                                .replace("%randomUUID%", UUID.randomUUID().toString())
+                                .replace("%avatarURL%", avatarURL)
+                                .replace("%playerColor%", "" + TextColors.generateFromUUID(p.getUuid()).getRGB())
+                        );
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                    } else {
+                        final EmbedBuilder b = Configuration.instance().embedMode.playerJoinMessage.toEmbed();
+                        b.setAuthor(FabricMessageUtils.formatPlayerName(p), null, avatarURL)
+                                .setDescription(Localization.instance().playerJoin.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                    }
                 } else
                     DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerJoin.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
             }
@@ -71,7 +86,7 @@ public class PlayerManagerMixin {
                 final Guild guild = DiscordIntegration.INSTANCE.getChannel().getGuild();
                 final Role linkedRole = guild.getRoleById(Configuration.instance().linking.linkedRoleID);
                 if (LinkManager.isPlayerLinked(uuid)) {
-                    final Member member = guild.getMemberById(LinkManager.getLink(null, uuid).discordID);
+                    final Member member = DiscordIntegration.INSTANCE.getMemberById(LinkManager.getLink(null, uuid).discordID);
                     if (!member.getRoles().contains(linkedRole))
                         guild.addRoleToMember(member, linkedRole).queue();
                 }

@@ -69,14 +69,26 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
             }
             if (!Localization.instance().discordChatMessage.isBlank())
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.chatMessages.asEmbed) {
-
-                    EmbedBuilder b = Configuration.instance().embedMode.chatMessages.toEmbed();
-                    if (Configuration.instance().embedMode.chatMessages.generateUniqueColors)
-                        b = b.setColor(TextColors.generateFromUUID(player.getUuid()));
                     final String avatarURL = Configuration.instance().webhook.playerAvatarURL.replace("%uuid%", player.getUuid().toString()).replace("%uuid_dashless%", player.getUuid().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
-                    b = b.setAuthor(FabricMessageUtils.formatPlayerName(player), null, avatarURL)
-                            .setDescription(text);
-                    DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                    if (!Configuration.instance().embedMode.chatMessages.customJSON.isBlank()) {
+                        final EmbedBuilder b = Configuration.instance().embedMode.chatMessages.toEmbedJson(Configuration.instance().embedMode.chatMessages.customJSON
+                                .replace("%uuid%", player.getUuid().toString())
+                                .replace("%uuid_dashless%", player.getUuid().toString().replace("-", ""))
+                                .replace("%name%", FabricMessageUtils.formatPlayerName(player))
+                                .replace("%randomUUID%", UUID.randomUUID().toString())
+                                .replace("%avatarURL%", avatarURL)
+                                .replace("%msg%", text)
+                                .replace("%playerColor%", "" + TextColors.generateFromUUID(player.getUuid()).getRGB())
+                        );
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                    } else {
+                        EmbedBuilder b = Configuration.instance().embedMode.chatMessages.toEmbed();
+                        if (Configuration.instance().embedMode.chatMessages.generateUniqueColors)
+                            b = b.setColor(TextColors.generateFromUUID(player.getUuid()));
+                        b = b.setAuthor(FabricMessageUtils.formatPlayerName(player), null, avatarURL)
+                                .setDescription(text);
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                    }
                 } else
                     DiscordIntegration.INSTANCE.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, text, true), channel);
             final String json = Text.Serializer.toJson(message.getContent());
@@ -147,15 +159,22 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
             DiscordIntegration.started = new Date().getTime();
             if (!Localization.instance().serverStarted.isBlank())
                 if (DiscordIntegration.startingMsg != null) {
-                    if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.startMessages.asEmbed)
-
-                        DiscordIntegration.startingMsg.thenAccept((a) -> a.editMessageEmbeds(Configuration.instance().embedMode.startMessages.toEmbed().setDescription(Localization.instance().serverStarted).build()).queue());
-                    else
+                    if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.startMessages.asEmbed) {
+                        if (!Configuration.instance().embedMode.startMessages.customJSON.isBlank()) {
+                            final EmbedBuilder b = Configuration.instance().embedMode.startMessages.toEmbedJson(Configuration.instance().embedMode.startMessages.customJSON);
+                            DiscordIntegration.startingMsg.thenAccept((a) -> a.editMessageEmbeds(b.build()).queue());
+                        } else
+                            DiscordIntegration.startingMsg.thenAccept((a) -> a.editMessageEmbeds(Configuration.instance().embedMode.startMessages.toEmbed().setDescription(Localization.instance().serverStarted).build()).queue());
+                    } else
                         DiscordIntegration.startingMsg.thenAccept((a) -> a.editMessage(Localization.instance().serverStarted).queue());
                 } else {
-                    if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.startMessages.asEmbed)
-                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(Configuration.instance().embedMode.startMessages.toEmbed().setDescription(Localization.instance().serverStarted).build()));
-                    else
+                    if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.startMessages.asEmbed) {
+                        if (!Configuration.instance().embedMode.startMessages.customJSON.isBlank()) {
+                            final EmbedBuilder b = Configuration.instance().embedMode.startMessages.toEmbedJson(Configuration.instance().embedMode.startMessages.customJSON);
+                            DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                        } else
+                            DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(Configuration.instance().embedMode.startMessages.toEmbed().setDescription(Localization.instance().serverStarted).build()));
+                    } else
                         DiscordIntegration.INSTANCE.sendMessage(Localization.instance().serverStarted);
                 }
             DiscordIntegration.INSTANCE.startThreads();
@@ -172,9 +191,13 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
     private void serverStopping(MinecraftServer minecraftServer) {
         if (DiscordIntegration.INSTANCE != null) {
             if (!Localization.instance().serverStopped.isBlank())
-                if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.stopMessages.asEmbed)
-                    DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(Configuration.instance().embedMode.stopMessages.toEmbed().setDescription(Localization.instance().serverStopped).build()));
-                else
+                if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.stopMessages.asEmbed) {
+                    if (!Configuration.instance().embedMode.stopMessages.customJSON.isBlank()) {
+                        final EmbedBuilder b = Configuration.instance().embedMode.stopMessages.toEmbedJson(Configuration.instance().embedMode.stopMessages.customJSON);
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                    } else
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(Configuration.instance().embedMode.stopMessages.toEmbed().setDescription(Localization.instance().serverStopped).build()));
+                } else
                     DiscordIntegration.INSTANCE.sendMessage(Localization.instance().serverStopped);
             DiscordIntegration.INSTANCE.stopThreads();
         }
@@ -187,9 +210,9 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                 DiscordIntegration.INSTANCE.stopThreads();
                 if (!Localization.instance().serverCrash.isBlank())
                     try {
-                        if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.stopMessages.asEmbed)
+                        if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.stopMessages.asEmbed) {
                             DiscordIntegration.INSTANCE.sendMessageReturns(new MessageCreateBuilder().addEmbeds(Configuration.instance().embedMode.stopMessages.toEmbed().setDescription(Localization.instance().serverCrash).build()).build(), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID)).get();
-                        else
+                        } else
                             DiscordIntegration.INSTANCE.sendMessageReturns(new MessageCreateBuilder().setContent(Localization.instance().serverCrash).build(), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID)).get();
                     } catch (InterruptedException | ExecutionException ignored) {
                     }

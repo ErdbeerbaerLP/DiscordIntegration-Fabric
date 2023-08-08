@@ -15,9 +15,10 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Pseudo
 @Mixin(StyledChatUtils.class)
 public class StyledChatMixin {
-    @Redirect(method = "modifyForSending",at=@At(value = "INVOKE", target = "Leu/pb4/styledchat/StyledChatUtils;formatMessage(Lnet/minecraft/network/message/SignedMessage;Lnet/minecraft/server/command/ServerCommandSource;Lnet/minecraft/registry/RegistryKey;)Lnet/minecraft/text/Text;"))
-    private static Text message(SignedMessage msg, ServerCommandSource s, RegistryKey<MessageType> e){
-        msg = DiscordIntegrationMod.handleChatMessage(msg,s.getPlayer());
-        return StyledChatUtils.formatMessage(msg,s,e);
+    @Redirect(method = "modifyForSending", at = @At(value = "INVOKE", target = "Leu/pb4/styledchat/StyledChatUtils;formatMessage(Lnet/minecraft/network/message/SignedMessage;Lnet/minecraft/server/command/ServerCommandSource;Lnet/minecraft/registry/RegistryKey;)Lnet/minecraft/text/Text;"))
+    private static Text message(SignedMessage msg, ServerCommandSource s, RegistryKey<MessageType> e) {
+        if (e.equals(MessageType.CHAT))
+            msg = DiscordIntegrationMod.handleChatMessage(msg, s.getPlayer());
+        return StyledChatUtils.formatMessage(msg, s, e);
     }
 }
