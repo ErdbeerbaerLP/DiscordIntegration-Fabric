@@ -12,7 +12,6 @@ import net.minecraft.util.math.Vec2f;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 
 public class DCCommandSender extends ServerCommandSource {
@@ -32,8 +31,8 @@ public class DCCommandSender extends ServerCommandSource {
     }
 
     @Override
-    public void sendFeedback(Supplier<Text> feedbackSupplier, boolean broadcastToOps) {
-        message.append(textComponentToDiscordMessage(feedbackSupplier.get())).append("\n");
+    public void sendFeedback(Text message, boolean broadcastToOps) {
+        this.message.append(textComponentToDiscordMessage(message)).append("\n");
         if (cmdMessage == null)
             cmdMsg.thenAccept((msg) -> {
                 cmdMessage = msg.editOriginal(message.toString().trim()).submit();
@@ -46,6 +45,6 @@ public class DCCommandSender extends ServerCommandSource {
 
     @Override
     public void sendError(Text message) {
-        this.sendFeedback(()->message,false);
+        this.sendFeedback(message,false);
     }
 }

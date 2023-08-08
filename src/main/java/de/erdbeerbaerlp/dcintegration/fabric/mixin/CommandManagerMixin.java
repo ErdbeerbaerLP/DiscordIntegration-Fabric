@@ -68,7 +68,7 @@ public class CommandManagerMixin {
                                     source.sendError(Text.literal(Localization.instance().commands.consoleOnly));
                                 } catch (CommandSyntaxException e) {
                                     final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, null));
-                                    source.sendFeedback(() -> Text.Serializer.fromJson(txt), false);
+                                    source.sendFeedback( Text.Serializer.fromJson(txt), false);
                                 }
                                 break;
                             case PLAYER_ONLY:
@@ -79,10 +79,10 @@ public class CommandManagerMixin {
                                         source.sendFeedback(() -> Text.Serializer.fromJson(txt), false);
                                     } else if (((FabricServerInterface) DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(player, MinecraftPermission.RUN_DISCORD_COMMAND_ADMIN)) {
                                         final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, player.getUuid()));
-                                        source.sendFeedback(() -> Text.Serializer.fromJson(txt), false);
+                                        source.sendFeedback( Text.Serializer.fromJson(txt), false);
                                     } else if (source.hasPermissionLevel(4)) {
                                         final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, player.getUuid()));
-                                        source.sendFeedback(() -> Text.Serializer.fromJson(txt), false);
+                                        source.sendFeedback( Text.Serializer.fromJson(txt), false);
                                     } else {
                                         source.sendError(Text.literal(Localization.instance().commands.noPermission));
                                     }
@@ -99,16 +99,16 @@ public class CommandManagerMixin {
                                         source.sendFeedback(() -> Text.Serializer.fromJson(txt), false);
                                     } else if (((FabricServerInterface) DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(player, MinecraftPermission.RUN_DISCORD_COMMAND_ADMIN)) {
                                         final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, player.getUuid()));
-                                        source.sendFeedback(() -> Text.Serializer.fromJson(txt), false);
+                                        source.sendFeedback( Text.Serializer.fromJson(txt), false);
                                     } else if (source.hasPermissionLevel(4)) {
                                         final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, player.getUuid()));
-                                        source.sendFeedback(() -> Text.Serializer.fromJson(txt), false);
+                                        source.sendFeedback( Text.Serializer.fromJson(txt), false);
                                     } else {
                                         source.sendError(Text.literal(Localization.instance().commands.noPermission));
                                     }
                                 } catch (CommandSyntaxException e) {
                                     final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, null));
-                                    source.sendFeedback(() -> Text.Serializer.fromJson(txt), false);
+                                    source.sendFeedback( Text.Serializer.fromJson(txt), false);
                                 }
                                 break;
                         }
