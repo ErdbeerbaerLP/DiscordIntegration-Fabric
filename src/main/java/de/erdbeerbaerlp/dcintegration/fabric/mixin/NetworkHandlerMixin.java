@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -31,7 +32,7 @@ public class NetworkHandlerMixin {
      */
     @Inject(method = "disconnect", at = @At("HEAD"))
     private void onDisconnect(final Text textComponent, CallbackInfo ci) {
-        if (textComponent.equals(Text.translatable("disconnect.timeout")))
+        if (textComponent.equals(new TranslatableText("disconnect.timeout")))
             DiscordIntegrationMod.timeouts.add(this.player.getUuid());
     }
 

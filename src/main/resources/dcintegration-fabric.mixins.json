@@ -10,8 +10,7 @@
     "ServerPlayerEntityMixin",
     "PlayerManagerMixin",
     "ChatMixin",
-    "CommandManagerMixin",
-    "StyledChatMixin"
+    "CommandManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

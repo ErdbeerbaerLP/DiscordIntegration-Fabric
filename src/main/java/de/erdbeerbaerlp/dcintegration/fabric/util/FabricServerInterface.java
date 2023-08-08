@@ -71,7 +71,7 @@ public class FabricServerInterface implements McServerInterface{
                     p.sendMessage(comp, false);
                     if (ping.getKey()) {
                         if (LinkManager.isPlayerLinked(p.getUuid())&&LinkManager.getLink(null, p.getUuid()).settings.pingSound) {
-                            p.networkHandler.sendPacket(new PlaySoundS2CPacket(SoundEvents.BLOCK_NOTE_BLOCK_PLING, SoundCategory.MASTER, p.getPos().x,p.getPos().y,p.getPos().z, 1, 1, server.getOverworld().getSeed()));
+                            p.networkHandler.sendPacket(new PlaySoundS2CPacket(SoundEvents.BLOCK_NOTE_BLOCK_PLING, SoundCategory.MASTER, p.getPos().x,p.getPos().y,p.getPos().z, 1, 1));
                         }
                     }
                 }
@@ -79,7 +79,7 @@ public class FabricServerInterface implements McServerInterface{
             //Send to server console too
             final String jsonComp = GsonComponentSerializer.gson().serialize(msg).replace("\\\\n", "\n");
             final Text comp = TextArgumentType.text().parse(new StringReader(jsonComp));
-            server.sendMessage(comp);
+            server.sendSystemMessage(comp, DiscordIntegration.dummyUUID);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -153,7 +153,7 @@ public class FabricServerInterface implements McServerInterface{
     public void sendIngameMessage(String msg, UUID player) {
         final ServerPlayerEntity p = server.getPlayerManager().getPlayer(player);
         if (p != null)
-            p.sendMessage( Text.of(msg));
+            p.sendSystemMessage( Text.of(msg), DiscordIntegration.dummyUUID);
     }
 
     @Override
