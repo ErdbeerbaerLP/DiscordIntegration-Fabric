@@ -9,14 +9,14 @@ import de.erdbeerbaerlp.dcintegration.common.util.TextColors;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.minecraft.advancement.Advancement;
+import net.minecraft.advancement.AdvancementRewards;
 import net.minecraft.advancement.PlayerAdvancementTracker;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Formatting;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -27,13 +27,13 @@ import static de.erdbeerbaerlp.dcintegration.common.DiscordIntegration.INSTANCE;
 @Mixin(PlayerAdvancementTracker.class)
 public class AdvancementMixin {
     @Shadow
-    ServerPlayerEntity owner;
+    private ServerPlayerEntity owner;
 
-    @Inject(method = "grantCriterion", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancement/PlayerAdvancementTracker;updateDisplay(Lnet/minecraft/advancement/Advancement;)V"))
-    public void advancement(Advancement advancement, String criterionName, CallbackInfoReturnable<Boolean> cir) {
-        if (DiscordIntegration.INSTANCE == null) return;
+    @Redirect(method = "grantCriterion", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancement/Advancement;getRewards()Lnet/minecraft/advancement/AdvancementRewards;"))
+    public AdvancementRewards advancement(Advancement advancement) {
+        if (DiscordIntegration.INSTANCE == null) return null;
         if (LinkManager.isPlayerLinked(owner.getUuid()) && LinkManager.getLink(null, owner.getUuid()).settings.hideFromDiscord)
-            return;
+            return null;
         if (advancement != null && advancement.getDisplay() != null && advancement.getDisplay().shouldAnnounceToChat()) {
 
             if (!Localization.instance().advancementMessage.isBlank()) {
@@ -95,5 +95,6 @@ public class AdvancementMixin {
         }
 
 
+        return advancement.getRewards();
     }
 }
