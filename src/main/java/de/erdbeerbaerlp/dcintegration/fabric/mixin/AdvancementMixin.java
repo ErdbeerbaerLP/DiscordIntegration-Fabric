@@ -51,7 +51,18 @@ public class AdvancementMixin {
                     } else {
                         EmbedBuilder b = Configuration.instance().embedMode.advancementMessage.toEmbed();
                         b = b.setAuthor(FabricMessageUtils.formatPlayerName(owner), null, avatarURL)
-                                .setDescription(Localization.instance().advancementMessage.replace("%player%", FabricMessageUtils.formatPlayerName(owner)));
+                                .setDescription(Localization.instance().advancementMessage.replace("%player%",
+                                                Formatting.strip(FabricMessageUtils.formatPlayerName(owner))).replace("%name%",
+                                                Formatting.strip(advancement
+                                                        .getDisplay()
+                                                        .getTitle()
+                                                        .getString()))
+                                        .replace("%desc%",
+                                                Formatting.strip(advancement
+                                                        .getDisplay()
+                                                        .getDescription()
+                                                        .getString()))
+                                        .replace("\\n", "\n"));
                         DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
                     }
                 } else
