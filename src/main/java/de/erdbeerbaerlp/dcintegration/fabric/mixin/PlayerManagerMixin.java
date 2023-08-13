@@ -2,6 +2,7 @@ package de.erdbeerbaerlp.dcintegration.fabric.mixin;
 
 import com.mojang.authlib.GameProfile;
 import de.erdbeerbaerlp.dcintegration.common.DiscordIntegration;
+import de.erdbeerbaerlp.dcintegration.common.WorkThread;
 import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
 import de.erdbeerbaerlp.dcintegration.common.storage.Localization;
 import de.erdbeerbaerlp.dcintegration.common.storage.linking.LinkManager;
@@ -79,7 +80,7 @@ public class PlayerManagerMixin {
                     DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerJoin.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
             }
             // Fix link status (if user does not have role, give the role to the user, or vice versa)
-            final Thread fixLinkStatus = new Thread(() -> {
+            WorkThread.executeJob(() -> {
                 if (Configuration.instance().linking.linkedRoleID.equals("0")) return;
                 final UUID uuid = p.getUuid();
                 if (!LinkManager.isPlayerLinked(uuid)) return;
@@ -91,8 +92,6 @@ public class PlayerManagerMixin {
                         guild.addRoleToMember(member, linkedRole).queue();
                 }
             });
-            fixLinkStatus.setDaemon(true);
-            fixLinkStatus.start();
         }
     }
 }
