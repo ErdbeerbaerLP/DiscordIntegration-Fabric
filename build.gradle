@@ -47,7 +47,7 @@ dependencies {
     modCompileOnly "maven.modrinth:styled-chat:2.1.6+1.19.4"
 
     // =========  Common  =====================
-    modImplementation include('de.erdbeerbaerlp:dcintegration.common:3.0.1') {
+    modImplementation include('de.erdbeerbaerlp:dcintegration.common:3.0.2') {
         changing = true
     }
 

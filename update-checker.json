@@ -1,2 +1,7 @@
 [
+  {
+    "version": "3.0.2",
+    "changelog": "Fixed linking not being saved\nOptimized code",
+    "type": "alpha"
+  }
 ]
