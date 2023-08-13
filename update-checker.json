@@ -3,10 +3,6 @@
     "version": "3.0.5",
     "changelog": "Fix server stopping not working\nFix update checker\nImplement URL Encoded advancement message\nImplement permissions",
     "type": "beta"
-  },{
-    "version": "3.0.3",
-    "changelog": "Added custom status\nAdded tellraw\nAdded option to disable chat message editing for compatibility reasons\nFixed lots of bugs",
-    "type": "beta"
   },
   {
     "version": "3.0.2",
