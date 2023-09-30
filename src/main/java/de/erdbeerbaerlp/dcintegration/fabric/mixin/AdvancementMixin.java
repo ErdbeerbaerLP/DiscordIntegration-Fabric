@@ -27,13 +27,13 @@ import static de.erdbeerbaerlp.dcintegration.common.DiscordIntegration.INSTANCE;
 @Mixin(PlayerAdvancementTracker.class)
 public class AdvancementMixin {
     @Shadow
-    private ServerPlayerEntity owner;
+    ServerPlayerEntity owner;
 
-    @Redirect(method = "grantCriterion", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancement/Advancement;getRewards()Lnet/minecraft/advancement/AdvancementRewards;"))
-    public AdvancementRewards advancement(Advancement advancement) {
-        if (DiscordIntegration.INSTANCE == null) return null;
+    @Inject(method = "grantCriterion", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancement/PlayerAdvancementTracker;updateDisplay(Lnet/minecraft/advancement/Advancement;)V"))
+    public void advancement(Advancement advancement, String criterionName, CallbackInfoReturnable<Boolean> cir) {
+        if (DiscordIntegration.INSTANCE == null) return;
         if (LinkManager.isPlayerLinked(owner.getUuid()) && LinkManager.getLink(null, owner.getUuid()).settings.hideFromDiscord)
-            return null;
+            return;
         if (advancement != null && advancement.getDisplay() != null && advancement.getDisplay().shouldAnnounceToChat()) {
 
             if (!Localization.instance().advancementMessage.isBlank()) {
@@ -95,6 +95,5 @@ public class AdvancementMixin {
         }
 
 
-        return advancement.getRewards();
     }
 }
