@@ -91,12 +91,14 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                     }
                 } else
                     DiscordIntegration.INSTANCE.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, text, true), channel);
-            final String json = Text.Serializer.toJson(message.getContent());
-            final Component comp = GsonComponentSerializer.gson().deserialize(json);
-            final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
-            final MutableText txt = Text.Serializer.fromJson(editedJson);
-            //message = message.withUnsignedContent(txt);
-            message = SignedMessage.ofUnsigned(txt.getString());
+            if (!Configuration.instance().compatibility.disableParsingMentionsIngame) {
+                final String json = Text.Serializer.toJson(message.getContent());
+                final Component comp = GsonComponentSerializer.gson().deserialize(json);
+                final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
+                final MutableText txt = Text.Serializer.fromJson(editedJson);
+                //message = message.withUnsignedContent(txt);
+                message = SignedMessage.ofUnsigned(txt.getString());
+            }
         }
         return message;
     }
@@ -179,7 +181,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                 }
             DiscordIntegration.INSTANCE.startThreads();
         }
-        UpdateChecker.runUpdateCheck("https://raw.githubusercontent.com/ErdbeerbaerLP/Discord-Integration-Fabric/1.20.1/update-checker.json");
+        UpdateChecker.runUpdateCheck("https://raw.githubusercontent.com/ErdbeerbaerLP/Discord-Integration-Fabric/1.19.4/update-checker.json");
         if (!DownloadSourceChecker.checkDownloadSource(new File(DiscordIntegrationMod.class.getProtectionDomain().getCodeSource().getLocation().getPath().split("%")[0]))) {
             LOGGER.warn("You likely got this mod from a third party website.");
             LOGGER.warn("Some of such websites are distributing malware or old versions.");
