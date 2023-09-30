@@ -25,7 +25,7 @@ public class ChatMixin {
      */
     @Redirect(method = "handleMessage", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/PlayerManager;broadcast(Lnet/minecraft/text/Text;Ljava/util/function/Function;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V"))
     public void chatMessage(PlayerManager instance, Text serverMessage, Function<ServerPlayerEntity, Text> playerMessageFactory, MessageType type, UUID sender) {
-        serverMessage = DiscordIntegrationMod.handleChatMessage(serverMessage, player);
+        serverMessage = DiscordIntegrationMod.handleChatMessage(serverMessage, player, playerMessageFactory);
         instance.broadcast(serverMessage, type, sender);
 
     }

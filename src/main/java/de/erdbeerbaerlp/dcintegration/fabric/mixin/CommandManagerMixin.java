@@ -1,6 +1,7 @@
 package de.erdbeerbaerlp.dcintegration.fabric.mixin;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import dcshadow.dev.vankka.mcdiscordreserializer.discord.DiscordSerializer;
 import dcshadow.net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import de.erdbeerbaerlp.dcintegration.common.DiscordIntegration;
 import de.erdbeerbaerlp.dcintegration.common.minecraftCommands.MCSubCommand;
@@ -51,6 +52,13 @@ public class CommandManagerMixin {
                 }
                 final Entity sourceEntity = commandSource.getEntity();
                 DiscordIntegration.INSTANCE.sendMessage(commandSource.getName(), sourceEntity != null ? sourceEntity.getUuid().toString() : "0000000", new DiscordMessage(null, msg, !raw), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID));
+            }
+
+            if(command.startsWith("tellraw ") && !Configuration.instance().messages.tellrawSelector.isBlank()){
+                final String[] args = command.replace("tellraw ", "").replace("dc ", "").split(" ");
+                if(args[0].equals(Configuration.instance().messages.tellrawSelector)){
+                    DiscordIntegration.INSTANCE.sendMessage(DiscordSerializer.INSTANCE.serialize(GsonComponentSerializer.gson().deserialize(command.replace("tellraw " + args[0], ""))));
+                }
             }
 
             if (command.startsWith("discord ") || command.startsWith("dc ")) {

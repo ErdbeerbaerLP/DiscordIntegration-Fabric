@@ -23,7 +23,9 @@ import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
 import static de.erdbeerbaerlp.dcintegration.common.DiscordIntegration.LOGGER;
 
@@ -45,27 +48,30 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
     public static final ArrayList<UUID> timeouts = new ArrayList<>();
     public static boolean stopped = false;
 
-    public static Text handleChatMessage(Text message, ServerPlayerEntity player) {
-        if (DiscordIntegration.INSTANCE == null) return message;
+    public static Text handleChatMessage(Text messageIn, ServerPlayerEntity player, Function<ServerPlayerEntity, Text> playerMessageFactory) {
+        if (DiscordIntegration.INSTANCE == null) return messageIn;
         if (LinkManager.isPlayerLinked(player.getUuid()) && LinkManager.getLink(null, player.getUuid()).settings.hideFromDiscord) {
-            return message;
+            return messageIn;
         }
 
-        final Text finalMessage = message;
+        final Text finalMessage;
+        if (messageIn instanceof TranslatableText) {
+            finalMessage = new LiteralText((String)((TranslatableText) messageIn).getArgs()[1]);
+        } else finalMessage = messageIn;
         if (DiscordIntegration.INSTANCE.callEvent((e) -> {
             if (e instanceof FabricDiscordEventHandler) {
                 return ((FabricDiscordEventHandler) e).onMcChatMessage(finalMessage, player);
             }
             return false;
         })) {
-            return message;
+            return messageIn;
         }
-        final String text = MessageUtils.escapeMarkdown(message.getString());
-        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(message);
+        final String text = MessageUtils.escapeMarkdown(finalMessage.getString());
+        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(messageIn);
         if (DiscordIntegration.INSTANCE != null) {
             final GuildMessageChannel channel = DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID);
             if (channel == null) {
-                return message;
+                return messageIn;
             }
             if (!Localization.instance().discordChatMessage.isBlank())
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.chatMessages.asEmbed) {
@@ -91,13 +97,17 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                     }
                 } else
                     DiscordIntegration.INSTANCE.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, text, true), channel);
-            final String json = Text.Serializer.toJson(message);
-            final Component comp = GsonComponentSerializer.gson().deserialize(json);
-            final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
-            message = Text.Serializer.fromJson(editedJson);
+
+            if (!Configuration.instance().compatibility.disableParsingMentionsIngame) {
+                final String json = Text.Serializer.toJson(messageIn);
+                final Component comp = GsonComponentSerializer.gson().deserialize(json);
+                final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
+                messageIn = Text.Serializer.fromJson(editedJson);
+            }
         }
-        return message;
+        return messageIn;
     }
+
     private Text styledChat(Text txt, ServerPlayerEntity player, boolean filtered) {
         if ((LinkManager.isPlayerLinked(player.getUuid()) && LinkManager.getLink(null, player.getUuid()).settings.hideFromDiscord) || filtered) {
             return txt;
@@ -133,6 +143,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
 
         return txt;
     }
+
     @Override
     public void onInitializeServer() {
         try {

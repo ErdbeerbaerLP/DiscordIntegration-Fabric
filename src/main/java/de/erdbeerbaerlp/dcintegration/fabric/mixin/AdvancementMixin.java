@@ -25,7 +25,7 @@ public class AdvancementMixin {
     @Shadow
     ServerPlayerEntity owner;
 
-    @Inject(method = "grantCriterion", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancement/PlayerAdvancementTracker;onStatusUpdate(Lnet/minecraft/advancement/Advancement;)V"))
+    @Inject(method = "grantCriterion", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancement/PlayerAdvancementTracker;updateDisplay(Lnet/minecraft/advancement/Advancement;)V"))
     public void advancement(Advancement advancement, String criterionName, CallbackInfoReturnable<Boolean> cir) {
         if (DiscordIntegration.INSTANCE == null) return;
         if (LinkManager.isPlayerLinked(owner.getUuid()) && LinkManager.getLink(null, owner.getUuid()).settings.hideFromDiscord)
@@ -52,12 +52,13 @@ public class AdvancementMixin {
                         EmbedBuilder b = Configuration.instance().embedMode.advancementMessage.toEmbed();
                         b = b.setAuthor(FabricMessageUtils.formatPlayerName(owner), null, avatarURL)
                                 .setDescription(Localization.instance().advancementMessage.replace("%player%",
-                                                Formatting.strip(FabricMessageUtils.formatPlayerName(owner))).replace("%name%",
+                                                Formatting.strip(FabricMessageUtils.formatPlayerName(owner)))
+                                        .replace("%advName%",
                                                 Formatting.strip(advancement
                                                         .getDisplay()
                                                         .getTitle()
                                                         .getString()))
-                                        .replace("%desc%",
+                                        .replace("%advDesc%",
                                                 Formatting.strip(advancement
                                                         .getDisplay()
                                                         .getDescription()
@@ -68,12 +69,12 @@ public class AdvancementMixin {
                 } else
                     DiscordIntegration.INSTANCE.sendMessage(Localization.instance().advancementMessage.replace("%player%",
                                     Formatting.strip(FabricMessageUtils.formatPlayerName(owner)))
-                            .replace("%name%",
+                            .replace("%advName%",
                                     Formatting.strip(advancement
                                             .getDisplay()
                                             .getTitle()
                                             .getString()))
-                            .replace("%desc%",
+                            .replace("%advDesc%",
                                     Formatting.strip(advancement
                                             .getDisplay()
                                             .getDescription()
