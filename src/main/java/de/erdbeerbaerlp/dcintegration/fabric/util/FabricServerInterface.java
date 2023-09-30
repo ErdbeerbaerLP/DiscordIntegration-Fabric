@@ -1,6 +1,5 @@
 package de.erdbeerbaerlp.dcintegration.fabric.util;
 
-import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dcshadow.com.vdurmont.emoji.EmojiParser;
@@ -163,7 +162,7 @@ public class FabricServerInterface implements McServerInterface{
 
     @Override
     public String getNameFromUUID(UUID uuid) {
-        return server.getSessionService().fillProfileProperties(new GameProfile(uuid,""),false).getName();
+        return server.getSessionService().fetchProfile(uuid,false).profile().getName();
     }
 
     @Override

@@ -181,7 +181,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                 }
             DiscordIntegration.INSTANCE.startThreads();
         }
-        UpdateChecker.runUpdateCheck("https://raw.githubusercontent.com/ErdbeerbaerLP/Discord-Integration-Fabric/1.20.1/update-checker.json");
+        UpdateChecker.runUpdateCheck("https://raw.githubusercontent.com/ErdbeerbaerLP/Discord-Integration-Fabric/1.20.2/update-checker.json");
         if (!DownloadSourceChecker.checkDownloadSource(new File(DiscordIntegrationMod.class.getProtectionDomain().getCodeSource().getLocation().getPath().split("%")[0]))) {
             LOGGER.warn("You likely got this mod from a third party website.");
             LOGGER.warn("Some of such websites are distributing malware or old versions.");

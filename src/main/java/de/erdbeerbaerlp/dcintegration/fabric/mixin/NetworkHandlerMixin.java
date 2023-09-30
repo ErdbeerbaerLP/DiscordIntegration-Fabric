@@ -29,7 +29,7 @@ public class NetworkHandlerMixin {
     /**
      * Handle possible timeout
      */
-    @Inject(method = "disconnect", at = @At("HEAD"))
+    @Inject(method = "onDisconnected", at = @At("HEAD"))
     private void onDisconnect(final Text textComponent, CallbackInfo ci) {
         if (textComponent.equals(Text.translatable("disconnect.timeout")))
             DiscordIntegrationMod.timeouts.add(this.player.getUuid());

@@ -9,6 +9,7 @@ import de.erdbeerbaerlp.dcintegration.common.util.TextColors;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.minecraft.advancement.Advancement;
+import net.minecraft.advancement.AdvancementEntry;
 import net.minecraft.advancement.PlayerAdvancementTracker;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Formatting;
@@ -25,12 +26,13 @@ public class AdvancementMixin {
     @Shadow
     ServerPlayerEntity owner;
 
-    @Inject(method = "grantCriterion", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancement/PlayerAdvancementTracker;onStatusUpdate(Lnet/minecraft/advancement/Advancement;)V"))
-    public void advancement(Advancement advancement, String criterionName, CallbackInfoReturnable<Boolean> cir) {
+    @Inject(method = "grantCriterion", at = @At(value = "INVOKE", target = "Lnet/minecraft/advancement/PlayerAdvancementTracker;onStatusUpdate(Lnet/minecraft/advancement/AdvancementEntry;)V"))
+    public void advancement(AdvancementEntry advancementEntry, String criterionName, CallbackInfoReturnable<Boolean> cir) {
         if (DiscordIntegration.INSTANCE == null) return;
+        final Advancement advancement = advancementEntry.value();
         if (LinkManager.isPlayerLinked(owner.getUuid()) && LinkManager.getLink(null, owner.getUuid()).settings.hideFromDiscord)
             return;
-        if (advancement != null && advancement.getDisplay() != null && advancement.getDisplay().shouldAnnounceToChat()) {
+        if (advancement != null && advancement.display().isPresent() && advancement.display().get().shouldAnnounceToChat()) {
 
             if (!Localization.instance().advancementMessage.isBlank()) {
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.advancementMessage.asEmbed) {
@@ -42,8 +44,8 @@ public class AdvancementMixin {
                                 .replace("%name%", FabricMessageUtils.formatPlayerName(owner))
                                 .replace("%randomUUID%", UUID.randomUUID().toString())
                                 .replace("%avatarURL%", avatarURL)
-                                .replace("%advName%", Formatting.strip(advancement.getDisplay().getTitle().getString()))
-                                .replace("%advDesc%", Formatting.strip(advancement.getDisplay().getDescription().getString()))
+                                .replace("%advName%", Formatting.strip(advancement.display().get().getTitle().getString()))
+                                .replace("%advDesc%", Formatting.strip(advancement.display().get().getDescription().getString()))
                                 .replace("%avatarURL%", avatarURL)
                                 .replace("%playerColor%", "" + TextColors.generateFromUUID(owner.getUuid()).getRGB())
                         );
@@ -55,12 +57,12 @@ public class AdvancementMixin {
                                                 Formatting.strip(FabricMessageUtils.formatPlayerName(owner)))
                                         .replace("%advName%",
                                                 Formatting.strip(advancement
-                                                        .getDisplay()
+                                                        .display().get()
                                                         .getTitle()
                                                         .getString()))
                                         .replace("%advDesc%",
                                                 Formatting.strip(advancement
-                                                        .getDisplay()
+                                                        .display().get()
                                                         .getDescription()
                                                         .getString()))
                                         .replace("\\n", "\n"));
@@ -71,12 +73,12 @@ public class AdvancementMixin {
                                     Formatting.strip(FabricMessageUtils.formatPlayerName(owner)))
                             .replace("%advName%",
                                     Formatting.strip(advancement
-                                            .getDisplay()
+                                            .display().get()
                                             .getTitle()
                                             .getString()))
                             .replace("%advDesc%",
                                     Formatting.strip(advancement
-                                            .getDisplay()
+                                            .display().get()
                                             .getDescription()
                                             .getString()))
                             .replace("\\n", "\n"));
