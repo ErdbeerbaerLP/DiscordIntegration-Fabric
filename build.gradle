@@ -43,8 +43,8 @@ dependencies {
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    modImplementation include("eu.pb4:placeholder-api:2.2.0+1.20.2")
-    modCompileOnly "maven.modrinth:styled-chat:2.3.0+1.20.2"
+    modImplementation include("eu.pb4:placeholder-api:2.1.2+1.20.1")
+    modCompileOnly "maven.modrinth:styled-chat:2.2.2+1.20.1"
 
     // =========  Common  =====================
     modImplementation include('de.erdbeerbaerlp:dcintegration.common:3.0.5') {
