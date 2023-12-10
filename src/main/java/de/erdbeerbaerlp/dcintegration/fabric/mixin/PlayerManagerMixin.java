@@ -27,6 +27,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.net.SocketAddress;
 import java.util.UUID;
 
+import static de.erdbeerbaerlp.dcintegration.common.DiscordIntegration.INSTANCE;
+
 
 @Mixin(PlayerManager.class)
 public class PlayerManagerMixin {
@@ -75,10 +77,10 @@ public class PlayerManagerMixin {
                         final EmbedBuilder b = Configuration.instance().embedMode.playerJoinMessage.toEmbed();
                         b.setAuthor(FabricMessageUtils.formatPlayerName(p), null, avatarURL)
                                 .setDescription(Localization.instance().playerJoin.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
-                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                     }
                 } else
-                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerJoin.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
+                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerJoin.replace("%player%", FabricMessageUtils.formatPlayerName(p)),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
             }
             // Fix link status (if user does not have role, give the role to the user, or vice versa)
             WorkThread.executeJob(() -> {

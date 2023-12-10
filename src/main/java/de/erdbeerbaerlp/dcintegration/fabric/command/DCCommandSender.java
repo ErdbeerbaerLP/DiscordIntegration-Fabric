@@ -1,6 +1,5 @@
 package de.erdbeerbaerlp.dcintegration.fabric.command;
 
-import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
 import de.erdbeerbaerlp.dcintegration.common.util.MessageUtils;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
@@ -12,14 +11,11 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.util.math.Vec3d;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 
 public class DCCommandSender extends ServerCommandSource {
-
-    private static final UUID uuid = UUID.fromString(Configuration.instance().commands.senderUUID);
     private final CompletableFuture<InteractionHook> cmdMsg;
     private CompletableFuture<Message> cmdMessage;
     final StringBuilder message = new StringBuilder();

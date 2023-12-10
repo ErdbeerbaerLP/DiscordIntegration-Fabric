@@ -21,6 +21,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.UUID;
 
+import static de.erdbeerbaerlp.dcintegration.common.DiscordIntegration.INSTANCE;
+
 @Mixin(value = ServerPlayNetworkHandler.class)
 public class NetworkHandlerMixin {
     @Shadow
@@ -53,15 +55,15 @@ public class NetworkHandlerMixin {
                                 .replace("%avatarURL%", avatarURL)
                                 .replace("%playerColor%", "" + TextColors.generateFromUUID(player.getUuid()).getRGB())
                         );
-                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                     } else {
                         EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbed();
                         b = b.setAuthor(FabricMessageUtils.formatPlayerName(player), null, avatarURL)
                                 .setDescription(Localization.instance().playerLeave.replace("%player%", FabricMessageUtils.formatPlayerName(player)));
-                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                     }
                 } else
-                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerLeave.replace("%player%", FabricMessageUtils.formatPlayerName(player)));
+                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerLeave.replace("%player%", FabricMessageUtils.formatPlayerName(player)),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
             }
         } else if (DiscordIntegration.INSTANCE != null && DiscordIntegrationMod.timeouts.contains(player.getUuid())) {
             if (!Localization.instance().playerTimeout.isBlank()) {
@@ -69,9 +71,9 @@ public class NetworkHandlerMixin {
                     EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbed();
                     b = b.setAuthor(FabricMessageUtils.formatPlayerName(player), null, avatarURL)
                             .setDescription(Localization.instance().playerTimeout.replace("%player%", FabricMessageUtils.formatPlayerName(player)));
-                    DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                    DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                 } else
-                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerTimeout.replace("%player%", FabricMessageUtils.formatPlayerName(player)));
+                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerTimeout.replace("%player%", FabricMessageUtils.formatPlayerName(player)),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
             }
             DiscordIntegrationMod.timeouts.remove(player.getUuid());
         }

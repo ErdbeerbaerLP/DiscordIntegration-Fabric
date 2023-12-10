@@ -19,6 +19,7 @@ import de.erdbeerbaerlp.dcintegration.common.util.ComponentUtils;
 import de.erdbeerbaerlp.dcintegration.common.util.McServerInterface;
 import de.erdbeerbaerlp.dcintegration.common.util.MinecraftPermission;
 import de.erdbeerbaerlp.dcintegration.fabric.command.DCCommandSender;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
@@ -27,6 +28,7 @@ import net.dv8tion.jda.api.entities.emoji.EmojiUnion;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.minecraft.command.argument.TextArgumentType;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -63,6 +65,8 @@ public class FabricServerInterface implements McServerInterface{
         final List<ServerPlayerEntity> l = server.getPlayerManager().getPlayerList();
         try {
             for (final ServerPlayerEntity p : l) {
+                if (!playerHasPermissions(p, MinecraftPermission.READ_MESSAGES, MinecraftPermission.USER))
+                    return;
                 if (!DiscordIntegration.INSTANCE.ignoringPlayers.contains(p.getUuid()) && !(LinkManager.isPlayerLinked(p.getUuid()) && LinkManager.getLink(null, p.getUuid()).settings.ignoreDiscordChatIngame)) {
                     final Map.Entry<Boolean, Component> ping = ComponentUtils.parsePing(msg, p.getUuid(), p.getName().getString());
                     final String jsonComp = GsonComponentSerializer.gson().serialize(ping.getValue()).replace("\\\\n", "\n");
@@ -88,6 +92,8 @@ public class FabricServerInterface implements McServerInterface{
     public void sendIngameReaction(Member member, RestAction<Message> retrieveMessage, UUID targetUUID, EmojiUnion reactionEmote) {
         final List<ServerPlayerEntity> l = server.getPlayerManager().getPlayerList();
         for (final ServerPlayerEntity p : l) {
+            if (!playerHasPermissions(p, MinecraftPermission.READ_MESSAGES, MinecraftPermission.USER))
+                return;
             if (p.getUuid().equals(targetUUID) && !DiscordIntegration.INSTANCE.ignoringPlayers.contains(p.getUuid()) && (LinkManager.isPlayerLinked(p.getUuid())&&!LinkManager.getLink(null, p.getUuid()).settings.ignoreDiscordChatIngame && !LinkManager.getLink(null, p.getUuid()).settings.ignoreReactions)) {
 
                 final String emote = reactionEmote.getType() == Emoji.Type.UNICODE ? EmojiParser.parseToAliases(reactionEmote.getName()) : ":" + reactionEmote.getName() + ":";
@@ -127,16 +133,11 @@ public class FabricServerInterface implements McServerInterface{
     @Override
     public void runMcCommand(String cmd, CompletableFuture<InteractionHook> cmdMsg, User user) {
         final DCCommandSender s = new DCCommandSender(cmdMsg, user, server);
-        if (s.hasPermissionLevel(4)) {
             try {
                 server.getCommandManager().getDispatcher().execute(cmd.trim(), s);
             } catch (CommandSyntaxException e) {
                 s.sendError(Text.of(e.getMessage()));
             }
-
-        } else
-            s.sendError(Text.of("Sorry, but the bot has no permissions...\nAdd this into the servers ops.json:\n```json\n {\n   \"uuid\": \"" + Configuration.instance().commands.senderUUID + "\",\n   \"name\": \"DiscordFakeUser\",\n   \"level\": 4,\n   \"bypassesPlayerLimit\": false\n }\n```"));
-
     }
 
     @Override
@@ -172,11 +173,36 @@ public class FabricServerInterface implements McServerInterface{
 
     @Override
     public boolean playerHasPermissions(UUID player, String... permissions) {
+        for (String permission : permissions) {
+            for (MinecraftPermission value : MinecraftPermission.values()) {
+                if(value.getAsString().equals(permission)){
+                    if(Permissions.check(player,value.getAsString(), value.getDefaultValue()).join()){
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    public boolean playerHasPermissions(PlayerEntity player, String... permissions) {
+        for (String permission : permissions) {
+            for (MinecraftPermission value : MinecraftPermission.values()) {
+                if(value.getAsString().equals(permission)){
+                    if(Permissions.check(player,value.getAsString(), value.getDefaultValue())){
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
-    @Override
-    public boolean playerHasPermissions(UUID player, MinecraftPermission... permissions) {
-        return McServerInterface.super.playerHasPermissions(player, permissions);
+
+    public boolean playerHasPermissions(PlayerEntity player, MinecraftPermission... permissions) {
+        final String[] permissionStrings = new String[permissions.length];
+        for (int i = 0; i < permissions.length; i++) {
+            permissionStrings[i] = permissions[i].getAsString();
+        }
+        return playerHasPermissions(player, permissionStrings);
     }
 }

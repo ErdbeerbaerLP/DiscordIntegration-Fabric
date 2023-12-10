@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import static de.erdbeerbaerlp.dcintegration.common.DiscordIntegration.INSTANCE;
 import static de.erdbeerbaerlp.dcintegration.common.DiscordIntegration.LOGGER;
 
 public class DiscordIntegrationMod implements DedicatedServerModInitializer {
@@ -47,6 +48,8 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
 
     public static SignedMessage handleChatMessage(SignedMessage message, ServerPlayerEntity player) {
         if (DiscordIntegration.INSTANCE == null) return message;
+        if (!((FabricServerInterface)DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(player, MinecraftPermission.SEMD_MESSAGES, MinecraftPermission.USER))
+            return message;
         if (LinkManager.isPlayerLinked(player.getUuid()) && LinkManager.getLink(null, player.getUuid()).settings.hideFromDiscord) {
             return message;
         }
@@ -80,14 +83,14 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                                 .replace("%msg%", text)
                                 .replace("%playerColor%", "" + TextColors.generateFromUUID(player.getUuid()).getRGB())
                         );
-                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID));
                     } else {
                         EmbedBuilder b = Configuration.instance().embedMode.chatMessages.toEmbed();
                         if (Configuration.instance().embedMode.chatMessages.generateUniqueColors)
                             b = b.setColor(TextColors.generateFromUUID(player.getUuid()));
                         b = b.setAuthor(FabricMessageUtils.formatPlayerName(player), null, avatarURL)
                                 .setDescription(text);
-                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID));
                     }
                 } else
                     DiscordIntegration.INSTANCE.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, text, true), channel);
@@ -96,7 +99,6 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                 final Component comp = GsonComponentSerializer.gson().deserialize(json);
                 final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
                 final MutableText txt = Text.Serializer.fromJson(editedJson);
-                //message = message.withUnsignedContent(txt);
                 message = SignedMessage.ofUnsigned(txt.getString());
             }
         }
@@ -113,14 +115,14 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                 ServerLifecycleEvents.SERVER_STOPPED.register(this::serverStopped);
                 ServerLifecycleEvents.SERVER_STOPPING.register(this::serverStopping);
             } else {
-                System.err.println("Please check the config file and set an bot token");
+                DiscordIntegration.LOGGER.error("Please check the config file and set an bot token");
             }
         } catch (IOException e) {
-            System.err.println("Config loading failed");
+            DiscordIntegration.LOGGER.error("Config loading failed");
             e.printStackTrace();
         } catch (IllegalStateException e) {
-            System.err.println("Failed to read config file! Please check your config file!\nError description: " + e.getMessage());
-            System.err.println("\nStacktrace: ");
+            DiscordIntegration.LOGGER.error("Failed to read config file! Please check your config file!\nError description: " + e.getMessage());
+            DiscordIntegration.LOGGER.error("\nStacktrace: ");
             e.printStackTrace();
         }
     }
@@ -129,7 +131,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
         DiscordIntegration.INSTANCE = new DiscordIntegration(new FabricServerInterface(minecraftServer));
         try {
             //Wait a short time to allow JDA to get initiaized
-            System.out.println("Waiting for JDA to initialize to send starting message... (max 5 seconds before skipping)");
+            DiscordIntegration.LOGGER.info("Waiting for JDA to initialize to send starting message... (max 5 seconds before skipping)");
             for (int i = 0; i <= 5; i++) {
                 if (DiscordIntegration.INSTANCE.getJDA() == null) Thread.sleep(1000);
                 else break;
@@ -156,7 +158,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
     }
 
     private void serverStarted(MinecraftServer minecraftServer) {
-        System.out.println("Started");
+        DiscordIntegration.LOGGER.info("Started");
         if (DiscordIntegration.INSTANCE != null) {
             DiscordIntegration.started = new Date().getTime();
             if (!Localization.instance().serverStarted.isBlank())
@@ -173,11 +175,11 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                     if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.startMessages.asEmbed) {
                         if (!Configuration.instance().embedMode.startMessages.customJSON.isBlank()) {
                             final EmbedBuilder b = Configuration.instance().embedMode.startMessages.toEmbedJson(Configuration.instance().embedMode.startMessages.customJSON);
-                            DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                            DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                         } else
-                            DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(Configuration.instance().embedMode.startMessages.toEmbed().setDescription(Localization.instance().serverStarted).build()));
+                            DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(Configuration.instance().embedMode.startMessages.toEmbed().setDescription(Localization.instance().serverStarted).build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                     } else
-                        DiscordIntegration.INSTANCE.sendMessage(Localization.instance().serverStarted);
+                        DiscordIntegration.INSTANCE.sendMessage(Localization.instance().serverStarted,INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                 }
             DiscordIntegration.INSTANCE.startThreads();
         }

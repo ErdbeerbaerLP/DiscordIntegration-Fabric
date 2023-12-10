@@ -20,6 +20,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.UUID;
 
+import static de.erdbeerbaerlp.dcintegration.common.DiscordIntegration.INSTANCE;
+
 @Mixin(ServerPlayerEntity.class)
 public class ServerPlayerEntityMixin {
     @Inject(at = @At(value = "TAIL"), method = "onDeath")
@@ -34,8 +36,8 @@ public class ServerPlayerEntityMixin {
             if (!Localization.instance().playerDeath.isBlank())
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.deathMessage.asEmbed) {
                     final String avatarURL = Configuration.instance().webhook.playerAvatarURL.replace("%uuid%", p.getUuid().toString()).replace("%uuid_dashless%", p.getUuid().toString().replace("-", "")).replace("%name%", p.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
-                    if(!Configuration.instance().embedMode.playerJoinMessage.customJSON.isBlank()){
-                        final EmbedBuilder b = Configuration.instance().embedMode.playerJoinMessage.toEmbedJson(Configuration.instance().embedMode.playerJoinMessage.customJSON
+                    if(!Configuration.instance().embedMode.deathMessage.customJSON.isBlank()){
+                        final EmbedBuilder b = Configuration.instance().embedMode.deathMessage.toEmbedJson(Configuration.instance().embedMode.deathMessage.customJSON
                                 .replace("%uuid%", p.getUuid().toString())
                                 .replace("%uuid_dashless%", p.getUuid().toString().replace("-", ""))
                                 .replace("%name%", FabricMessageUtils.formatPlayerName(p))
@@ -48,7 +50,7 @@ public class ServerPlayerEntityMixin {
                             b.addBlankField(false);
                             b.addField(embed.getTitle() + " *(" + embed.getFooter().getText() + ")*", embed.getDescription(), false);
                         }
-                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.deathsChannelID));
                     }else {
                         final EmbedBuilder b = Configuration.instance().embedMode.deathMessage.toEmbed();
                         b.setDescription(":skull: " + Localization.instance().playerDeath.replace("%player%", FabricMessageUtils.formatPlayerName(p)).replace("%msg%", Formatting.strip(deathMessage.getString()).replace(FabricMessageUtils.formatPlayerName(p) + " ", "")));

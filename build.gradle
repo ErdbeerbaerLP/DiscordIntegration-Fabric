@@ -47,9 +47,11 @@ dependencies {
     modCompileOnly "maven.modrinth:styled-chat:2.3.0+1.20.2"
 
     // =========  Common  =====================
-    modImplementation include('de.erdbeerbaerlp:dcintegration.common:3.0.3') {
+    modImplementation include('de.erdbeerbaerlp:dcintegration.common:3.0.5') {
         changing = true
+        transitive = false
     }
+    include(modImplementation('me.lucko:fabric-permissions-api:0.2-SNAPSHOT'))
 
 }
 

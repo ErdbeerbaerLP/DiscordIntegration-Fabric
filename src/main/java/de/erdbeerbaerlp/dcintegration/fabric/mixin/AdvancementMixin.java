@@ -19,7 +19,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+
+import static de.erdbeerbaerlp.dcintegration.common.DiscordIntegration.INSTANCE;
 
 @Mixin(PlayerAdvancementTracker.class)
 public class AdvancementMixin {
@@ -46,10 +50,12 @@ public class AdvancementMixin {
                                 .replace("%avatarURL%", avatarURL)
                                 .replace("%advName%", Formatting.strip(advancement.display().get().getTitle().getString()))
                                 .replace("%advDesc%", Formatting.strip(advancement.display().get().getDescription().getString()))
+                                .replace("%advNameURL%", URLEncoder.encode(Formatting.strip(advancement.display().get().getTitle().getString()), StandardCharsets.UTF_8))
+                                .replace("%advDescURL%", URLEncoder.encode(Formatting.strip(advancement.display().get().getDescription().getString()), StandardCharsets.UTF_8))
                                 .replace("%avatarURL%", avatarURL)
                                 .replace("%playerColor%", "" + TextColors.generateFromUUID(owner.getUuid()).getRGB())
                         );
-                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                     } else {
                         EmbedBuilder b = Configuration.instance().embedMode.advancementMessage.toEmbed();
                         b = b.setAuthor(FabricMessageUtils.formatPlayerName(owner), null, avatarURL)
@@ -65,8 +71,11 @@ public class AdvancementMixin {
                                                         .display().get()
                                                         .getDescription()
                                                         .getString()))
-                                        .replace("\\n", "\n"));
-                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()));
+                                        .replace("\\n", "\n")
+                                        .replace("%advNameURL%", URLEncoder.encode(Formatting.strip(advancement.display().get().getTitle().getString()), StandardCharsets.UTF_8))
+                                        .replace("%advDescURL%", URLEncoder.encode(Formatting.strip(advancement.display().get().getDescription().getString()), StandardCharsets.UTF_8))
+                                );
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                     }
                 } else
                     DiscordIntegration.INSTANCE.sendMessage(Localization.instance().advancementMessage.replace("%player%",
@@ -81,7 +90,9 @@ public class AdvancementMixin {
                                             .display().get()
                                             .getDescription()
                                             .getString()))
-                            .replace("\\n", "\n"));
+                            .replace("%advNameURL%", URLEncoder.encode(Formatting.strip(advancement.display().get().getTitle().getString()), StandardCharsets.UTF_8))
+                            .replace("%advDescURL%", URLEncoder.encode(Formatting.strip(advancement.display().get().getDescription().getString()), StandardCharsets.UTF_8))
+                            .replace("\\n", "\n"),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
             }
         }
 
