@@ -20,7 +20,6 @@ import net.dv8tion.jda.api.entities.Role;
 import net.minecraft.command.argument.TextArgumentType;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.server.PlayerManager;
-import net.minecraft.server.network.ConnectedClientData;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
@@ -70,7 +69,7 @@ public class PlayerManagerMixin {
     }
 
     @Inject(at = @At(value = "TAIL"), method = "onPlayerConnect")
-    private void onPlayerJoin(ClientConnection connection, ServerPlayerEntity p, ConnectedClientData clientData, CallbackInfo ci) {
+    private void onPlayerJoin(ClientConnection conn, ServerPlayerEntity p, CallbackInfo ci) {
         if (DiscordIntegration.INSTANCE != null) {
             if (LinkManager.isPlayerLinked(p.getUuid()) && LinkManager.getLink(null, p.getUuid()).settings.hideFromDiscord)
                 return;
