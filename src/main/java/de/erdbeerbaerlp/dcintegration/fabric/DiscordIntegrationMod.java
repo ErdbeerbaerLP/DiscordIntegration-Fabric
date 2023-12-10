@@ -24,6 +24,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 
@@ -52,7 +53,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
     public static Text handleChatMessage(Text messageIn, ServerPlayerEntity player, Function<ServerPlayerEntity, Text> playerMessageFactory) {
         if (DiscordIntegration.INSTANCE == null) return messageIn;
         if (!((FabricServerInterface)DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(player, MinecraftPermission.SEMD_MESSAGES, MinecraftPermission.USER))
-            return message;
+            return messageIn;
         if (LinkManager.isPlayerLinked(player.getUuid()) && LinkManager.getLink(null, player.getUuid()).settings.hideFromDiscord) {
             return messageIn;
         }
@@ -101,12 +102,12 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                 } else
                     DiscordIntegration.INSTANCE.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, text, true), channel);
             if (!Configuration.instance().compatibility.disableParsingMentionsIngame) {
-                final String json = Text.Serializer.toJson(message);
+                final String json = Text.Serializer.toJson(messageIn);
                 final Component comp = GsonComponentSerializer.gson().deserialize(json);
                 final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
                 final MutableText txt = Text.Serializer.fromJson(editedJson);
 
-                message = Text.Serializer.fromJson(editedJson);
+                messageIn = Text.Serializer.fromJson(editedJson);
             }
         }
         return messageIn;

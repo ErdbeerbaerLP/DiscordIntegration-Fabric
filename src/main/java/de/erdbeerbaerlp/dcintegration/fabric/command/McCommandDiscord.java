@@ -2,6 +2,7 @@ package de.erdbeerbaerlp.dcintegration.fabric.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import de.erdbeerbaerlp.dcintegration.common.DiscordIntegration;
 import de.erdbeerbaerlp.dcintegration.common.minecraftCommands.MCSubCommand;
 import de.erdbeerbaerlp.dcintegration.common.minecraftCommands.McCommandRegistry;
@@ -20,7 +21,14 @@ public class McCommandDiscord {
                     Style.EMPTY.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of(Configuration.instance().ingameCommand.hoverMessage)))
                             .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, Configuration.instance().ingameCommand.inviteURL))), false);
             return 0;
-        }).requires((s) -> ((FabricServerInterface) DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(s.getPlayer(), MinecraftPermission.USER, MinecraftPermission.RUN_DISCORD_COMMAND));
+        }).requires((s) -> {
+            try {
+                return ((FabricServerInterface) DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(s.getPlayer(), MinecraftPermission.USER, MinecraftPermission.RUN_DISCORD_COMMAND);
+            } catch (CommandSyntaxException e) {
+                e.printStackTrace();
+                return false;
+            }
+        });
         for (MCSubCommand cmd : McCommandRegistry.getCommands()) {
             l.then(CommandManager.literal(cmd.getName()));
         }
