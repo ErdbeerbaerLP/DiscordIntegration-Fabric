@@ -36,7 +36,7 @@ public class FabricMessageUtils extends MessageUtils {
 
     public static MessageEmbed genItemStackEmbedIfAvailable(Text component) {
         if (!Configuration.instance().forgeSpecific.sendItemInfo) return null;
-        final JsonObject json = JsonParser.parseString(Text.Serializer.toJson(component)).getAsJsonObject();
+        final JsonObject json = JsonParser.parseString(Text.Serialization.toJsonString(component)).getAsJsonObject();
         if (json.has("with")) {
             final JsonArray args = json.getAsJsonArray("with");
             for (JsonElement el : args) {

@@ -95,10 +95,10 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                 } else
                     DiscordIntegration.INSTANCE.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, text, true), channel);
             if (!Configuration.instance().compatibility.disableParsingMentionsIngame) {
-                final String json = Text.Serializer.toJson(message.getContent());
+                final String json = Text.Serialization.toJsonString(message.getContent());
                 final Component comp = GsonComponentSerializer.gson().deserialize(json);
                 final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
-                final MutableText txt = Text.Serializer.fromJson(editedJson);
+                final MutableText txt = Text.Serialization.fromJson(editedJson);
                 message = SignedMessage.ofUnsigned(txt.getString());
             }
         }
