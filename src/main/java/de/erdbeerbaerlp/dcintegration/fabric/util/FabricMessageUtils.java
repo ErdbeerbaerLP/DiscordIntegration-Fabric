@@ -38,7 +38,7 @@ public class FabricMessageUtils extends MessageUtils {
         if (!Configuration.instance().forgeSpecific.sendItemInfo) return null;
         JsonObject json;
         try {
-            final JsonElement jsonElement = JsonParser.parseString(Text.Serialization.toJsonString(component));
+            final JsonElement jsonElement = JsonParser.parseString(Text.Serializer.toJson(component));
             if (jsonElement.isJsonObject())
                 json = jsonElement.getAsJsonObject();
             else return null;
