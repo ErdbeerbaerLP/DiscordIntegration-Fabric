@@ -21,7 +21,7 @@ public class McCommandDiscord {
                             .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, Configuration.instance().ingameCommand.inviteURL))), false);
             return 0;
         }).requires((s) -> ((FabricServerInterface) DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(s.getPlayer(), MinecraftPermission.USER, MinecraftPermission.RUN_DISCORD_COMMAND));
-        for (MCSubCommand cmd : McCommandRegistry.getCommands()) {
+        for (final MCSubCommand cmd : McCommandRegistry.getCommands()) {
             l.then(CommandManager.literal(cmd.getName()));
         }
         dispatcher.register(l);

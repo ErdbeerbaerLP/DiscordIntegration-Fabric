@@ -11,6 +11,7 @@
     "PlayerManagerMixin",
     "ChatMixin",
     "CommandManagerMixin",
+    "MixinMinecraftServer",
     "StyledChatMixin"
   ],
   "injectors": {

@@ -31,9 +31,8 @@ repositories {
     }
     maven { url "https://maven.nucleoid.xyz/" }
 }
-task release{
-
-}
+tasks.register('release')
+tasks.release.group="publishing"
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -47,7 +46,7 @@ dependencies {
     modCompileOnly "maven.modrinth:styled-chat:2.1.6+1.19.4"
 
     // =========  Common  =====================
-    modImplementation include('de.erdbeerbaerlp:dcintegration.common:3.0.5') {
+    modImplementation include('de.erdbeerbaerlp:dcintegration.common:3.0.6') {
         changing = true
         transitive = false
     }

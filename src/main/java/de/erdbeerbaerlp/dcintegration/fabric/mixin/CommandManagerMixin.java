@@ -22,7 +22,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -31,14 +31,14 @@ import java.util.regex.Pattern;
 public class CommandManagerMixin {
 
     @Inject(method = "execute", cancellable = true, at = @At("HEAD"))
-    public void execute(ParseResults<ServerCommandSource> parseResults, String command, CallbackInfoReturnable<Integer> cir) {
-
+    public void execute(ParseResults<ServerCommandSource> parseResults, String command, CallbackInfo ci) {
         final ServerCommandSource source = parseResults.getContext().getSource();
+        String name = source.getName();
         command = command.replaceFirst(Pattern.quote("/"), "");
         if (!Configuration.instance().commandLog.channelID.equals("0")) {
             if (!ArrayUtils.contains(Configuration.instance().commandLog.ignoredCommands, command.split(" ")[0]))
                 DiscordIntegration.INSTANCE.sendMessage(Configuration.instance().commandLog.message
-                        .replace("%sender%", source.getName())
+                        .replace("%sender%", name)
                         .replace("%cmd%", command)
                         .replace("%cmd-no-args%", command.split(" ")[0]), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().commandLog.channelID));
         }
@@ -53,8 +53,16 @@ public class CommandManagerMixin {
                     raw = true;
                     msg = "*" + MessageUtils.escapeMarkdown(msg.replaceFirst("me ", "").trim()) + "*";
                 }
+
+
+                if(Configuration.instance().webhook.enable && name.equals("Rcon") && Configuration.instance().webhook.useServerNameForRcon){
+                    name = Configuration.instance().webhook.serverName;
+                }else if(Configuration.instance().webhook.enable && name.equals("Server") && Configuration.instance().webhook.useServerNameForConsole){
+                    name = Configuration.instance().webhook.serverName;
+                }
                 final Entity sourceEntity = source.getEntity();
-                DiscordIntegration.INSTANCE.sendMessage(source.getName(), sourceEntity != null ? sourceEntity.getUuid().toString() : "0000000", new DiscordMessage(null, msg, !raw), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID));
+
+                DiscordIntegration.INSTANCE.sendMessage(name, sourceEntity != null ? sourceEntity.getUuid().toString() : "0000000", new DiscordMessage(null, msg, !raw), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID));
             }
 
             if(command.startsWith("tellraw ") && !Configuration.instance().messages.tellrawSelector.isBlank()){
@@ -76,7 +84,7 @@ public class CommandManagerMixin {
                                     source.sendError(Text.literal(Localization.instance().commands.consoleOnly));
                                 } catch (CommandSyntaxException e) {
                                     final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, null));
-                                    source.sendFeedback( Text.Serializer.fromJson(txt), false);
+                                    source.sendFeedback( Text.Serialization.fromJson(txt), false);
                                 }
                                 break;
                             case PLAYER_ONLY:
@@ -84,13 +92,13 @@ public class CommandManagerMixin {
                                     final ServerPlayerEntity player = source.getPlayerOrThrow();
                                     if (!mcSubCommand.needsOP() && ((FabricServerInterface) DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(player, MinecraftPermission.RUN_DISCORD_COMMAND, MinecraftPermission.USER)) {
                                         final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, player.getUuid()));
-                                        source.sendFeedback(Text.Serializer.fromJson(txt), false);
+                                        source.sendFeedback(Text.Serialization.fromJson(txt), false);
                                     } else if (((FabricServerInterface) DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(player, MinecraftPermission.RUN_DISCORD_COMMAND_ADMIN)) {
                                         final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, player.getUuid()));
-                                        source.sendFeedback( Text.Serializer.fromJson(txt), false);
+                                        source.sendFeedback( Text.Serialization.fromJson(txt), false);
                                     } else if (source.hasPermissionLevel(4)) {
                                         final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, player.getUuid()));
-                                        source.sendFeedback( Text.Serializer.fromJson(txt), false);
+                                        source.sendFeedback( Text.Serialization.fromJson(txt), false);
                                     } else {
                                         source.sendError(Text.literal(Localization.instance().commands.noPermission));
                                     }
@@ -104,25 +112,25 @@ public class CommandManagerMixin {
                                     final ServerPlayerEntity player = source.getPlayerOrThrow();
                                     if (!mcSubCommand.needsOP() && ((FabricServerInterface) DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(player, MinecraftPermission.RUN_DISCORD_COMMAND, MinecraftPermission.USER)) {
                                         final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, player.getUuid()));
-                                        source.sendFeedback(Text.Serializer.fromJson(txt), false);
+                                        source.sendFeedback(Text.Serialization.fromJson(txt), false);
                                     } else if (((FabricServerInterface) DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(player, MinecraftPermission.RUN_DISCORD_COMMAND_ADMIN)) {
                                         final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, player.getUuid()));
-                                        source.sendFeedback( Text.Serializer.fromJson(txt), false);
+                                        source.sendFeedback( Text.Serialization.fromJson(txt), false);
                                     } else if (source.hasPermissionLevel(4)) {
                                         final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, player.getUuid()));
-                                        source.sendFeedback( Text.Serializer.fromJson(txt), false);
+                                        source.sendFeedback( Text.Serialization.fromJson(txt), false);
                                     } else {
                                         source.sendError(Text.literal(Localization.instance().commands.noPermission));
                                     }
                                 } catch (CommandSyntaxException e) {
                                     final String txt = GsonComponentSerializer.gson().serialize(mcSubCommand.execute(cmdArgs, null));
-                                    source.sendFeedback( Text.Serializer.fromJson(txt), false);
+                                    source.sendFeedback( Text.Serialization.fromJson(txt), false);
                                 }
                                 break;
                         }
                     }
-                    cir.setReturnValue(1);
                 }
+                ci.cancel();
             }
         }
     }
