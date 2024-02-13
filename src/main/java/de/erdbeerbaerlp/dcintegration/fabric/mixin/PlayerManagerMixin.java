@@ -1,6 +1,9 @@
 package de.erdbeerbaerlp.dcintegration.fabric.mixin;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.brigadier.StringReader;
+import dcshadow.net.kyori.adventure.text.Component;
+import dcshadow.net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import de.erdbeerbaerlp.dcintegration.common.DiscordIntegration;
 import de.erdbeerbaerlp.dcintegration.common.WorkThread;
 import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
@@ -13,6 +16,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
+import net.minecraft.command.argument.TextArgumentType;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ConnectedClientData;
@@ -40,6 +44,16 @@ public class PlayerManagerMixin {
     public void canJoin(SocketAddress address, GameProfile profile, CallbackInfoReturnable<Text> cir) {
         if (DiscordIntegration.INSTANCE == null) return;
         LinkManager.checkGlobalAPI(profile.getId());
+        final Component eventKick = INSTANCE.callEventO((e) -> e.onPlayerJoin(profile.getId()));
+        if(eventKick != null){
+            final String jsonComp = GsonComponentSerializer.gson().serialize(eventKick).replace("\\\\n", "\n");
+            try {
+                final Text comp = TextArgumentType.text().parse(new StringReader(jsonComp));
+                cir.setReturnValue(comp);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         if (Configuration.instance().linking.whitelistMode && DiscordIntegration.INSTANCE.getServerInterface().isOnlineMode()) {
             try {
                 if (!LinkManager.isPlayerLinked(profile.getId())) {

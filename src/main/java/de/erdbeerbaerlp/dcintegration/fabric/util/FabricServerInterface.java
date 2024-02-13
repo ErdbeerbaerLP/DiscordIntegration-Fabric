@@ -174,9 +174,9 @@ public class FabricServerInterface implements McServerInterface{
     @Override
     public boolean playerHasPermissions(UUID player, String... permissions) {
         for (String permission : permissions) {
-            for (MinecraftPermission value : MinecraftPermission.values()) {
-                if(value.getAsString().equals(permission)){
-                    if(Permissions.check(player,value.getAsString(), value.getDefaultValue()).join()){
+            for (final MinecraftPermission perm : MinecraftPermission.values()) {
+                if(perm.getAsString().equals(permission)){
+                    if(Permissions.check(player,perm.getAsString(), perm.getDefaultValue()).join()){
                         return true;
                     }
                 }
@@ -184,6 +184,18 @@ public class FabricServerInterface implements McServerInterface{
         }
         return false;
     }
+
+    @Override
+    public String runMCCommand(String cmd) {
+        final DCCommandSender s = new DCCommandSender(server);
+        try {
+            server.getCommandManager().getDispatcher().execute(cmd.trim(), s);
+            return s.message.toString();
+        } catch (CommandSyntaxException e) {
+            return e.getMessage();
+        }
+    }
+
     public boolean playerHasPermissions(PlayerEntity player, String... permissions) {
         for (String permission : permissions) {
             for (MinecraftPermission value : MinecraftPermission.values()) {
