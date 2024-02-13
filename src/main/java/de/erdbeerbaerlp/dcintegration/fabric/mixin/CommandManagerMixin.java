@@ -43,6 +43,7 @@ public class CommandManagerMixin {
         }
         if (DiscordIntegration.INSTANCE != null) {
             boolean raw = false;
+
             if (((command.startsWith("say")) && Configuration.instance().messages.sendOnSayCommand) || (command.startsWith("me") && Configuration.instance().messages.sendOnMeCommand)) {
                 String msg = command.replace("say ", "");
                 if (command.startsWith("say"))
@@ -119,8 +120,8 @@ public class CommandManagerMixin {
                                 break;
                         }
                     }
+                    cir.setReturnValue(1);
                 }
-                ci.cancel();
             }
         }
     }

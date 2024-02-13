@@ -78,10 +78,10 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
             if (channel == null) {
                 return messageIn;
             }
-            final String json = Text.Serializer.toJson(message.getContent());
+            final String json = Text.Serializer.toJson(messageIn);
             final Component comp = GsonComponentSerializer.gson().deserialize(json);
             if(INSTANCE.callEvent((e)->e.onMinecraftMessage(comp, player.getUuid()))){
-                return message;
+                return messageIn;
             }
             if (!Localization.instance().discordChatMessage.isBlank())
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.chatMessages.asEmbed) {
