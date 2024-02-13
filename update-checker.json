@@ -1,6 +1,10 @@
 [
   {
-  "version": "3.0.5",
+  "version": "3.0.6",
+    "changelog": "Implemented a few bug fixes\nAdd more events for addon developers",
+    "type": "release"
+  },{
+    "version": "3.0.5",
   "changelog": "Fix server stopping not working\nFix update checker\nImplement URL Encoded advancement message\nImplement permissions",
   "type": "beta"
   },

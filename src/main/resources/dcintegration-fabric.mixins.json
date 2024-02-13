@@ -10,7 +10,8 @@
     "ServerPlayerEntityMixin",
     "PlayerManagerMixin",
     "ChatMixin",
-    "CommandManagerMixin"
+    "CommandManagerMixin",
+    "MixinMinecraftServer"
   ],
   "injectors": {
     "defaultRequire": 1

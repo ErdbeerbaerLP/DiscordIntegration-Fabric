@@ -43,6 +43,7 @@ public class NetworkHandlerMixin {
         if (DiscordIntegrationMod.stopped) return; //Try to fix player leave messages after stop!
         if (LinkManager.isPlayerLinked(player.getUuid()) && LinkManager.getLink(null, player.getUuid()).settings.hideFromDiscord)
             return;
+        INSTANCE.callEventC((a)->a.onPlayerLeave(player.getUuid()));
         final String avatarURL = Configuration.instance().webhook.playerAvatarURL.replace("%uuid%", player.getUuid().toString()).replace("%uuid_dashless%", player.getUuid().toString().replace("-", "")).replace("%name%", player.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());
         if (DiscordIntegration.INSTANCE != null && !DiscordIntegrationMod.timeouts.contains(player.getUuid())) {
             if (!Localization.instance().playerLeave.isBlank()) {
@@ -58,8 +59,7 @@ public class NetworkHandlerMixin {
                         );
                         DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                     } else {
-                        EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbed();
-                        b = b.setAuthor(FabricMessageUtils.formatPlayerName(player), null, avatarURL)
+                        final EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbed().setAuthor(FabricMessageUtils.formatPlayerName(player), null, avatarURL)
                                 .setDescription(Localization.instance().playerLeave.replace("%player%", FabricMessageUtils.formatPlayerName(player)));
                         DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                     }
@@ -69,8 +69,8 @@ public class NetworkHandlerMixin {
         } else if (DiscordIntegration.INSTANCE != null && DiscordIntegrationMod.timeouts.contains(player.getUuid())) {
             if (!Localization.instance().playerTimeout.isBlank()) {
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.playerLeaveMessages.asEmbed) {
-                    EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbed();
-                    b = b.setAuthor(FabricMessageUtils.formatPlayerName(player), null, avatarURL)
+                    final EmbedBuilder b = Configuration.instance().embedMode.playerLeaveMessages.toEmbed()
+                            .setAuthor(FabricMessageUtils.formatPlayerName(player), null, avatarURL)
                             .setDescription(Localization.instance().playerTimeout.replace("%player%", FabricMessageUtils.formatPlayerName(player)));
                     DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                 } else

@@ -29,7 +29,7 @@ public class McCommandDiscord {
                 return false;
             }
         });
-        for (MCSubCommand cmd : McCommandRegistry.getCommands()) {
+        for (final MCSubCommand cmd : McCommandRegistry.getCommands()) {
             l.then(CommandManager.literal(cmd.getName()));
         }
         dispatcher.register(l);

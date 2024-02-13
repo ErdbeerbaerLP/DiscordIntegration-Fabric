@@ -17,11 +17,16 @@ import java.util.concurrent.CompletableFuture;
 public class DCCommandSender extends ServerCommandSource {
     private final CompletableFuture<InteractionHook> cmdMsg;
     private CompletableFuture<Message> cmdMessage;
-    final StringBuilder message = new StringBuilder();
+    public final StringBuilder message = new StringBuilder();
 
     public DCCommandSender(CompletableFuture<InteractionHook> cmdMsg, User user, MinecraftServer server) {
-        super(CommandOutput.DUMMY, new Vec3d(0,0,0), new Vec2f(0,0), server.getOverworld(), 4, user.getAsTag(), Text.of(user.getAsTag()), server,null);
+        super(CommandOutput.DUMMY, new Vec3d(0, 0, 0), new Vec2f(0, 0), server.getOverworld(), 4, user.getAsTag(), Text.of(user.getAsTag()), server, null);
         this.cmdMsg = cmdMsg;
+    }
+
+    public DCCommandSender(MinecraftServer server) {
+        super(CommandOutput.DUMMY, new Vec3d(0, 0, 0), new Vec2f(0, 0), server.getOverworld(), 4, "DiscordIntegration", Text.of("Discord Integration"), server, null);
+        this.cmdMsg = null;
     }
 
 
@@ -33,18 +38,19 @@ public class DCCommandSender extends ServerCommandSource {
     @Override
     public void sendFeedback(Text message, boolean broadcastToOps) {
         this.message.append(textComponentToDiscordMessage(message)).append("\n");
-        if (cmdMessage == null)
-            cmdMsg.thenAccept((msg) -> {
-                cmdMessage = msg.editOriginal(message.toString().trim()).submit();
-            });
-        else
-            cmdMessage.thenAccept((msg)->{
-               cmdMessage = msg.editMessage(message.toString().trim()).submit();
-            });
+        if (cmdMsg != null)
+            if (cmdMessage == null)
+                cmdMsg.thenAccept((msg) -> {
+                    cmdMessage = msg.editOriginal(message.toString().trim()).submit();
+                });
+            else
+                cmdMessage.thenAccept((msg) -> {
+                    cmdMessage = msg.editMessage(message.toString().trim()).submit();
+                });
     }
 
     @Override
     public void sendError(Text message) {
-        this.sendFeedback(message,false);
+        this.sendFeedback( message, false);
     }
 }
