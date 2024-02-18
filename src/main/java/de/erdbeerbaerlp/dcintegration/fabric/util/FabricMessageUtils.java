@@ -27,16 +27,25 @@ import net.minecraft.util.Identifier;
 import java.util.Arrays;
 
 public class FabricMessageUtils extends MessageUtils {
-    public static String formatPlayerName(ServerPlayerEntity player){
-        if(player.getPlayerListName() != null)
+    public static String formatPlayerName(ServerPlayerEntity player) {
+        if (player.getPlayerListName() != null)
             return Formatting.strip(player.getPlayerListName().getString());
         else
             return Formatting.strip(player.getName().getString());
     }
 
-    public static MessageEmbed genItemStackEmbedIfAvailable(Text component) {
+    public static MessageEmbed genItemStackEmbedIfAvailable(final Text component) {
         if (!Configuration.instance().forgeSpecific.sendItemInfo) return null;
-        final JsonObject json = JsonParser.parseString(Text.Serializer.toJson(component)).getAsJsonObject();
+        JsonObject json;
+        try {
+            final JsonElement jsonElement = JsonParser.parseString(Text.Serialization.toJsonString(component));
+            if (jsonElement.isJsonObject())
+                json = jsonElement.getAsJsonObject();
+            else return null;
+        } catch (final IllegalStateException ex) {
+            ex.printStackTrace();
+            return null;
+        }
         if (json.has("with")) {
             final JsonArray args = json.getAsJsonArray("with");
             for (JsonElement el : args) {
@@ -54,7 +63,7 @@ public class FabricMessageUtils extends MessageUtils {
                                     }
                                     final NbtCompound itemTag = is.getOrCreateNbt();
                                     final EmbedBuilder b = new EmbedBuilder();
-                                    String title = is.hasCustomName() ? is.getName().getString() : new TranslatableTextContent(is.getItem().getTranslationKey(), is.getItem().getName().getString(),null).toString();
+                                    String title = is.hasCustomName() ? is.getName().getString() : new TranslatableTextContent(is.getItem().getTranslationKey(), is.getItem().getName().getString(), null).toString();
                                     if (title.isEmpty())
                                         title = Text.translatable(is.getItem().getTranslationKey()).getString();
                                     else
@@ -72,8 +81,8 @@ public class FabricMessageUtils extends MessageUtils {
                                     }
                                     //Add Enchantments
                                     if (!flags[0]) {
-                                        EnchantmentHelper.fromNbt(is.getEnchantments()).forEach((ench,level)->{
-                                                tooltip.append(Formatting.strip(ench.getName(level).getString())).append("\n");
+                                        EnchantmentHelper.fromNbt(is.getEnchantments()).forEach((ench, level) -> {
+                                            tooltip.append(Formatting.strip(ench.getName(level).getString())).append("\n");
                                         });
                                     }
                                     //Add Lores

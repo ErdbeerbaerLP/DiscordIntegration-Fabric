@@ -3,12 +3,15 @@ package de.erdbeerbaerlp.dcintegration.fabric;
 import dcshadow.net.kyori.adventure.text.Component;
 import dcshadow.net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import de.erdbeerbaerlp.dcintegration.common.DiscordIntegration;
+import de.erdbeerbaerlp.dcintegration.common.addon.AddonLoader;
+import de.erdbeerbaerlp.dcintegration.common.addon.DiscordAddonMeta;
 import de.erdbeerbaerlp.dcintegration.common.storage.CommandRegistry;
 import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
 import de.erdbeerbaerlp.dcintegration.common.storage.Localization;
 import de.erdbeerbaerlp.dcintegration.common.storage.linking.LinkManager;
 import de.erdbeerbaerlp.dcintegration.common.util.*;
 import de.erdbeerbaerlp.dcintegration.fabric.api.FabricDiscordEventHandler;
+import de.erdbeerbaerlp.dcintegration.fabric.bstats.Metrics;
 import de.erdbeerbaerlp.dcintegration.fabric.command.McCommandDiscord;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricMessageUtils;
 import de.erdbeerbaerlp.dcintegration.fabric.util.FabricServerInterface;
@@ -27,9 +30,7 @@ import net.minecraft.text.Text;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import static de.erdbeerbaerlp.dcintegration.common.DiscordIntegration.INSTANCE;
@@ -55,19 +56,24 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
         }
 
         final SignedMessage finalMessage = message;
-        if (DiscordIntegration.INSTANCE.callEvent((e) -> {
-            if (e instanceof FabricDiscordEventHandler) {
-                return ((FabricDiscordEventHandler) e).onMcChatMessage(finalMessage.getContent(), player);
-            }
-            return false;
-        })) {
-            return message;
-        }
         final String text = MessageUtils.escapeMarkdown(message.getContent().getString());
         final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(message.getContent());
         if (DiscordIntegration.INSTANCE != null) {
+            if (DiscordIntegration.INSTANCE.callEvent((e) -> {
+                if (e instanceof FabricDiscordEventHandler) {
+                    return ((FabricDiscordEventHandler) e).onMcChatMessage(finalMessage.getContent(), player);
+                }
+                return false;
+            })) {
+                return message;
+            }
             final GuildMessageChannel channel = DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID);
             if (channel == null) {
+                return message;
+            }
+            final String json = Text.Serialization.toJsonString(message.getContent());
+            final Component comp = GsonComponentSerializer.gson().deserialize(json);
+            if(INSTANCE.callEvent((e)->e.onMinecraftMessage(comp, player.getUuid()))){
                 return message;
             }
             if (!Localization.instance().discordChatMessage.isBlank())
@@ -94,19 +100,22 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
                     }
                 } else
                     DiscordIntegration.INSTANCE.sendMessage(FabricMessageUtils.formatPlayerName(player), player.getUuid().toString(), new DiscordMessage(embed, text, true), channel);
+
             if (!Configuration.instance().compatibility.disableParsingMentionsIngame) {
-                final String json = Text.Serializer.toJson(message.getContent());
-                final Component comp = GsonComponentSerializer.gson().deserialize(json);
                 final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
-                final MutableText txt = Text.Serializer.fromJson(editedJson);
+                final MutableText txt = Text.Serialization.fromJson(editedJson);
                 message = SignedMessage.ofUnsigned(txt.getString());
             }
         }
         return message;
     }
 
+    public static Metrics bstats;
     @Override
     public void onInitializeServer() {
+
+        bstats = new Metrics(9765);
+
         try {
             DiscordIntegration.loadConfigs();
             ServerLifecycleEvents.SERVER_STARTED.register(this::serverStarted);
@@ -190,9 +199,22 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
             LOGGER.warn("Download this mod from an official source (https://www.curseforge.com/minecraft/mc-mods/dcintegration) to hide this message");
             LOGGER.warn("This warning can also be suppressed in the config file");
         }
+
+        bstats.addCustomChart(new Metrics.DrilldownPie("addons", () -> {
+            final Map<String, Map<String, Integer>> map = new HashMap<>();
+            if (Configuration.instance().bstats.sendAddonStats) {  //Only send if enabled, else send empty map
+                for (DiscordAddonMeta m : AddonLoader.getAddonMetas()) {
+                    final Map<String, Integer> entry = new HashMap<>();
+                    entry.put(m.getVersion(), 1);
+                    map.put(m.getName(), entry);
+                }
+            }
+            return map;
+        }));
     }
 
     private void serverStopping(MinecraftServer minecraftServer) {
+        Metrics.MetricsBase.scheduler.shutdownNow();
         if (DiscordIntegration.INSTANCE != null) {
             if (!Localization.instance().serverStopped.isBlank())
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.stopMessages.asEmbed) {
@@ -209,6 +231,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
     }
 
     private void serverStopped(MinecraftServer minecraftServer) {
+        Metrics.MetricsBase.scheduler.shutdownNow();
         if (DiscordIntegration.INSTANCE != null) {
             if (!stopped && DiscordIntegration.INSTANCE.getJDA() != null) minecraftServer.execute(() -> {
                 DiscordIntegration.INSTANCE.stopThreads();
