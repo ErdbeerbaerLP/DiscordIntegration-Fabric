@@ -1,6 +1,5 @@
 plugins {
-    id "com.matthewprenger.cursegradle" version "1.4.0"
-    id 'fabric-loom' version '1.4-SNAPSHOT'
+    id 'fabric-loom' version '1.6-SNAPSHOT'
     id "com.modrinth.minotaur" version "2.+"
 }
 
@@ -97,44 +96,3 @@ jar {
         rename { "${it}_${project.archivesBaseName}" }
     }
 }
-
-//Curseforge publishing
-curseforge {
-    if (project.hasProperty('curseforge.apikey')) { // $GRADLE_USER_HOME/gradle.properties
-        apiKey = project.getProperty("curseforge.apikey")
-        project {
-            id = '493679'
-            changelog = project.changelog
-            releaseType = project.releaseType.toLowerCase()
-            addGameVersion "${project.minecraft_version}"
-            mainArtifact(remapJar) {
-                displayName = "DiscordIntegration-Fabric $version (MC ${project.minecraft_version})"
-            }
-            relations {
-                requiredDependency 'fabric-api'
-                tool 'no-chat-reports'
-            }
-        }
-    }
-}
-modrinth{
-    if (project.hasProperty('modrinth.apikey')) { // $GRADLE_USER_HOME/gradle.properties
-        token = project.getProperty("modrinth.apikey") // Use an environment property!
-        projectId = 'rbJ7eS5V'
-        versionNumber = version+"-${project.minecraft_version}"
-        versionName = "DiscordIntegration-Fabric $version (MC ${project.minecraft_version})"
-        uploadFile = remapJar
-        changelog = project.changelog
-        gameVersions = ["${project.minecraft_version}"]
-        loaders = ['fabric']
-        dependencies {
-            required.project "fabric-api"
-            optional.project "no-chat-reports"
-        }
-
-        versionType = project.releaseType.toUpperCase()
-    }
-}
-tasks.release.dependsOn(tasks.build, tasks.curseforge,tasks.modrinth)
-
-
