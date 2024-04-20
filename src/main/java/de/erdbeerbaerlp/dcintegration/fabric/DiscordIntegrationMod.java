@@ -231,6 +231,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
     }
 
     private void serverStopped(MinecraftServer minecraftServer) {
+
         Metrics.MetricsBase.scheduler.shutdownNow();
         if (DiscordIntegration.INSTANCE != null) {
             if (!stopped && DiscordIntegration.INSTANCE.getJDA() != null) minecraftServer.execute(() -> {

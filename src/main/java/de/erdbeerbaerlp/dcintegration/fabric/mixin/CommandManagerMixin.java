@@ -35,14 +35,15 @@ public class CommandManagerMixin {
         final ServerCommandSource source = parseResults.getContext().getSource();
         String name = source.getName();
         command = command.replaceFirst(Pattern.quote("/"), "");
-        if (!Configuration.instance().commandLog.channelID.equals("0")) {
-            if (!ArrayUtils.contains(Configuration.instance().commandLog.ignoredCommands, command.split(" ")[0]))
-                DiscordIntegration.INSTANCE.sendMessage(Configuration.instance().commandLog.message
-                        .replace("%sender%", name)
-                        .replace("%cmd%", command)
-                        .replace("%cmd-no-args%", command.split(" ")[0]), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().commandLog.channelID));
-        }
         if (DiscordIntegration.INSTANCE != null) {
+            if (!Configuration.instance().commandLog.channelID.equals("0")) {
+                if ((!Configuration.instance().commandLog.commandWhitelist && !ArrayUtils.contains(Configuration.instance().commandLog.ignoredCommands, command.split(" ")[0])) ||
+                        (Configuration.instance().commandLog.commandWhitelist && ArrayUtils.contains(Configuration.instance().commandLog.ignoredCommands, command.split(" ")[0])))
+                    DiscordIntegration.INSTANCE.sendMessage(Configuration.instance().commandLog.message
+                            .replace("%sender%", name)
+                            .replace("%cmd%", command)
+                            .replace("%cmd-no-args%", command.split(" ")[0]), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().commandLog.channelID));
+            }
             boolean raw = false;
             if (((command.startsWith("say")) && Configuration.instance().messages.sendOnSayCommand) || (command.startsWith("me") && Configuration.instance().messages.sendOnMeCommand)) {
                 String msg = command.replace("say ", "");
