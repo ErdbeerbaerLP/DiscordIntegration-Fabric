@@ -71,7 +71,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
             if (channel == null) {
                 return message;
             }
-            final String json = Text.Serialization.toJsonString(message.getContent());
+            final String json = Text.Serializer.toJson(message.getContent());
             final Component comp = GsonComponentSerializer.gson().deserialize(json);
             if(INSTANCE.callEvent((e)->e.onMinecraftMessage(comp, player.getUuid()))){
                 return message;
@@ -103,7 +103,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
 
             if (!Configuration.instance().compatibility.disableParsingMentionsIngame) {
                 final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
-                final MutableText txt = Text.Serialization.fromJson(editedJson);
+                final MutableText txt = Text.Serializer.fromJson(editedJson);
                 message = SignedMessage.ofUnsigned(txt.getString());
             }
         }
