@@ -6,6 +6,7 @@ import dcshadow.net.kyori.adventure.text.Component;
 import dcshadow.net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import de.erdbeerbaerlp.dcintegration.common.DiscordIntegration;
 import de.erdbeerbaerlp.dcintegration.common.WorkThread;
+import de.erdbeerbaerlp.dcintegration.common.compat.FloodgateUtils;
 import de.erdbeerbaerlp.dcintegration.common.storage.Configuration;
 import de.erdbeerbaerlp.dcintegration.common.storage.Localization;
 import de.erdbeerbaerlp.dcintegration.common.storage.linking.LinkManager;
@@ -45,7 +46,7 @@ public class PlayerManagerMixin {
         if (DiscordIntegration.INSTANCE == null) return;
         LinkManager.checkGlobalAPI(profile.getId());
         final Component eventKick = INSTANCE.callEventO((e) -> e.onPlayerJoin(profile.getId()));
-        if(eventKick != null){
+        if (eventKick != null) {
             final String jsonComp = GsonComponentSerializer.gson().serialize(eventKick).replace("\\\\n", "\n");
             try {
                 final Text comp = TextArgumentType.text().parse(new StringReader(jsonComp));
@@ -57,7 +58,7 @@ public class PlayerManagerMixin {
         if (Configuration.instance().linking.whitelistMode && DiscordIntegration.INSTANCE.getServerInterface().isOnlineMode()) {
             try {
                 if (!LinkManager.isPlayerLinked(profile.getId())) {
-                    cir.setReturnValue(Text.of(Localization.instance().linking.notWhitelistedCode.replace("%code%", "" + LinkManager.genLinkNumber(profile.getId()))));
+                    cir.setReturnValue(Text.of(Localization.instance().linking.notWhitelistedCode.replace("%code%", "" + (FloodgateUtils.isBedrockPlayer(profile.getId()) ? LinkManager.genBedrockLinkNumber(profile.getId()) : LinkManager.genLinkNumber(profile.getId())))));
                 } else if (!DiscordIntegration.INSTANCE.canPlayerJoin(profile.getId())) {
                     cir.setReturnValue(Text.of(Localization.instance().linking.notWhitelistedRole));
                 }
@@ -91,10 +92,10 @@ public class PlayerManagerMixin {
                         final EmbedBuilder b = Configuration.instance().embedMode.playerJoinMessage.toEmbed();
                         b.setAuthor(FabricMessageUtils.formatPlayerName(p), null, avatarURL)
                                 .setDescription(Localization.instance().playerJoin.replace("%player%", FabricMessageUtils.formatPlayerName(p)));
-                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
+                        DiscordIntegration.INSTANCE.sendMessage(new DiscordMessage(b.build()), INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
                     }
                 } else
-                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerJoin.replace("%player%", FabricMessageUtils.formatPlayerName(p)),INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
+                    DiscordIntegration.INSTANCE.sendMessage(Localization.instance().playerJoin.replace("%player%", FabricMessageUtils.formatPlayerName(p)), INSTANCE.getChannel(Configuration.instance().advanced.serverChannelID));
             }
             // Fix link status (if user does not have role, give the role to the user, or vice versa)
             WorkThread.executeJob(() -> {

@@ -8,7 +8,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import static de.erdbeerbaerlp.dcintegration.common.DiscordIntegration.LOGGER;
 import static de.erdbeerbaerlp.dcintegration.fabric.DiscordIntegrationMod.bstats;
 
 @Mixin(MinecraftServer.class)
@@ -21,7 +20,6 @@ public class MixinMinecraftServer {
         bstats.addCustomChart(new Metrics.SimplePie("command_log", () -> !Configuration.instance().commandLog.channelID.equals("0") ? "Enabled" : "Disabled"));
         bstats.addCustomChart(new Metrics.SimplePie("loader",()->Metrics.capturedServer.get().getServerModName()));
 
-        LOGGER.info(Metrics.capturedServer.get().getServerModName());
     }
 
     @Inject(method = "shutdown", at = @At("HEAD"))

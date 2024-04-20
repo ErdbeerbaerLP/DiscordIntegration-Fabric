@@ -18,10 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -47,6 +44,7 @@ public class Metrics {
         // Get the config file
         final Path configFile = FabricLoader.getInstance().getConfigDir().resolve("bstats.json");
         final MetricsConfig config = readConfig(configFile);
+
         // Load the data
         metricsBase =
                 new MetricsBase(
@@ -144,8 +142,15 @@ public class Metrics {
         /** The version of the Metrics class. */
         public static final String METRICS_VERSION = "2.2.1";
 
+
         public static final ScheduledExecutorService scheduler =
-                Executors.newScheduledThreadPool(1, task -> new Thread(task, "bStats-Metrics"));
+                Executors.newSingleThreadScheduledExecutor(r -> {
+                    Thread t = Executors.defaultThreadFactory().newThread(r);
+                    t.setDaemon(true);
+                    t.setName("bStats-Metrics-test "+r.toString());
+                    t.setPriority(Thread.MIN_PRIORITY);
+                    return t;
+                });
 
         private static final String REPORT_URL = "https://bStats.org/api/v2/data/%s";
 
