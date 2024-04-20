@@ -32,7 +32,7 @@ public class CommandManagerMixin {
 
     @Inject(method = "execute", cancellable = true, at = @At("HEAD"))
     public void execute(ServerCommandSource commandSource, String command, CallbackInfoReturnable<Integer> cir) {
-
+        String name = commandSource.getName();
         command = command.replaceFirst(Pattern.quote("/"), "");
         if (DiscordIntegration.INSTANCE != null) {
             if (!Configuration.instance().commandLog.channelID.equals("0")) {
@@ -60,7 +60,7 @@ public class CommandManagerMixin {
                 }else if(Configuration.instance().webhook.enable && name.equals("Server") && Configuration.instance().webhook.useServerNameForConsole){
                     name = Configuration.instance().webhook.serverName;
                 }
-                final Entity sourceEntity = source.getEntity();
+                final Entity sourceEntity = commandSource.getEntity();
 
                 DiscordIntegration.INSTANCE.sendMessage(name, sourceEntity != null ? sourceEntity.getUuid().toString() : "0000000", new DiscordMessage(null, msg, !raw), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID));
             }
