@@ -23,10 +23,9 @@ public class McCommandDiscord {
             return 0;
         }).requires((s) -> {
             try {
-                return ((FabricServerInterface) DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(s.getPlayer(), MinecraftPermission.USER, MinecraftPermission.RUN_DISCORD_COMMAND);
-            } catch (CommandSyntaxException e) {
-                e.printStackTrace();
-                return false;
+                return ((FabricServerInterface) DiscordIntegration.INSTANCE.getServerInterface()).playerHasPermissions(s.getPlayerOrThrow(), MinecraftPermission.USER, MinecraftPermission.RUN_DISCORD_COMMAND);
+            }catch (CommandSyntaxException e) {
+                return true;
             }
         });
         for (final MCSubCommand cmd : McCommandRegistry.getCommands()) {

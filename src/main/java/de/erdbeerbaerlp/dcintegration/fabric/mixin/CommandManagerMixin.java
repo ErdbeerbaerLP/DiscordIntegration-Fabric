@@ -34,14 +34,15 @@ public class CommandManagerMixin {
     public void execute(ServerCommandSource commandSource, String command, CallbackInfoReturnable<Integer> cir) {
 
         command = command.replaceFirst(Pattern.quote("/"), "");
-        if (!Configuration.instance().commandLog.channelID.equals("0")) {
-            if (!ArrayUtils.contains(Configuration.instance().commandLog.ignoredCommands, command.split(" ")[0]))
-                DiscordIntegration.INSTANCE.sendMessage(Configuration.instance().commandLog.message
-                        .replace("%sender%", commandSource.getName())
-                        .replace("%cmd%", command)
-                        .replace("%cmd-no-args%", command.split(" ")[0]), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().commandLog.channelID));
-        }
         if (DiscordIntegration.INSTANCE != null) {
+            if (!Configuration.instance().commandLog.channelID.equals("0")) {
+                if ((!Configuration.instance().commandLog.commandWhitelist && !ArrayUtils.contains(Configuration.instance().commandLog.ignoredCommands, command.split(" ")[0])) ||
+                        (Configuration.instance().commandLog.commandWhitelist && ArrayUtils.contains(Configuration.instance().commandLog.ignoredCommands, command.split(" ")[0])))
+                    DiscordIntegration.INSTANCE.sendMessage(Configuration.instance().commandLog.message
+                            .replace("%sender%", commandSource.getName())
+                            .replace("%cmd%", command)
+                            .replace("%cmd-no-args%", command.split(" ")[0]), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().commandLog.channelID));
+            }
             boolean raw = false;
 
             if (((command.startsWith("say")) && Configuration.instance().messages.sendOnSayCommand) || (command.startsWith("me") && Configuration.instance().messages.sendOnMeCommand)) {
@@ -52,8 +53,16 @@ public class CommandManagerMixin {
                     raw = true;
                     msg = "*" + MessageUtils.escapeMarkdown(msg.replaceFirst("me ", "").trim()) + "*";
                 }
-                final Entity sourceEntity = commandSource.getEntity();
-                DiscordIntegration.INSTANCE.sendMessage(commandSource.getName(), sourceEntity != null ? sourceEntity.getUuid().toString() : "0000000", new DiscordMessage(null, msg, !raw), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID));
+
+
+                if(Configuration.instance().webhook.enable && name.equals("Rcon") && Configuration.instance().webhook.useServerNameForRcon){
+                    name = Configuration.instance().webhook.serverName;
+                }else if(Configuration.instance().webhook.enable && name.equals("Server") && Configuration.instance().webhook.useServerNameForConsole){
+                    name = Configuration.instance().webhook.serverName;
+                }
+                final Entity sourceEntity = source.getEntity();
+
+                DiscordIntegration.INSTANCE.sendMessage(name, sourceEntity != null ? sourceEntity.getUuid().toString() : "0000000", new DiscordMessage(null, msg, !raw), DiscordIntegration.INSTANCE.getChannel(Configuration.instance().advanced.chatOutputChannelID));
             }
 
             if(command.startsWith("tellraw ") && !Configuration.instance().messages.tellrawSelector.isBlank()){
