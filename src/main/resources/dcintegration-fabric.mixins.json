@@ -12,7 +12,8 @@
     "ChatMixin",
     "CommandManagerMixin",
     "MixinMinecraftServer",
-    "StyledChatMixin"
+    "StyledChatMixin",
+    "ItemEnchantmentsComponentMixin"
   ],
   "injectors": {
     "defaultRequire": 1

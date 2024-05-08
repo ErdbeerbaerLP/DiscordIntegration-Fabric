@@ -1,6 +1,5 @@
 package de.erdbeerbaerlp.dcintegration.fabric.util;
 
-import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dcshadow.com.vdurmont.emoji.EmojiParser;
 import dcshadow.net.kyori.adventure.text.Component;
@@ -27,9 +26,9 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.entities.emoji.EmojiUnion;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.requests.RestAction;
-import net.minecraft.command.argument.TextArgumentType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
+import net.minecraft.registry.BuiltinRegistries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -70,7 +69,7 @@ public class FabricServerInterface implements McServerInterface{
                 if (!DiscordIntegration.INSTANCE.ignoringPlayers.contains(p.getUuid()) && !(LinkManager.isPlayerLinked(p.getUuid()) && LinkManager.getLink(null, p.getUuid()).settings.ignoreDiscordChatIngame)) {
                     final Map.Entry<Boolean, Component> ping = ComponentUtils.parsePing(msg, p.getUuid(), p.getName().getString());
                     final String jsonComp = GsonComponentSerializer.gson().serialize(ping.getValue()).replace("\\\\n", "\n");
-                    final Text comp = TextArgumentType.text().parse(new StringReader(jsonComp));
+                    final Text comp = Text.Serialization.fromJson(jsonComp, p.getWorld().getRegistryManager());
                     p.sendMessage(comp, false);
                     if (ping.getKey()) {
                         if (LinkManager.isPlayerLinked(p.getUuid())&&LinkManager.getLink(null, p.getUuid()).settings.pingSound) {
@@ -81,7 +80,7 @@ public class FabricServerInterface implements McServerInterface{
             }
             //Send to server console too
             final String jsonComp = GsonComponentSerializer.gson().serialize(msg).replace("\\\\n", "\n");
-            final Text comp = TextArgumentType.text().parse(new StringReader(jsonComp));
+            final Text comp = Text.Serialization.fromJson(jsonComp, BuiltinRegistries.createWrapperLookup());
             server.sendMessage(comp);
         } catch (Exception e) {
             e.printStackTrace();
@@ -124,7 +123,7 @@ public class FabricServerInterface implements McServerInterface{
     private void sendReactionMCMessage(ServerPlayerEntity target, Component msgComp) {
         final String jsonComp = GsonComponentSerializer.gson().serialize(msgComp).replace("\\\\n", "\n");
         try {
-            final Text comp = TextArgumentType.text().parse(new StringReader(jsonComp));
+            final Text comp = Text.Serialization.fromJson(jsonComp,target.getWorld().getRegistryManager());
             target.sendMessage(comp, false);
         } catch (Exception e) {
             e.printStackTrace();

@@ -57,7 +57,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
 
         final SignedMessage finalMessage = message;
         final String text = MessageUtils.escapeMarkdown(message.getContent().getString());
-        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(message.getContent());
+        final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(message.getContent(), player.getWorld());
         if (DiscordIntegration.INSTANCE != null) {
             if (DiscordIntegration.INSTANCE.callEvent((e) -> {
                 if (e instanceof FabricDiscordEventHandler) {
@@ -71,7 +71,8 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
             if (channel == null) {
                 return message;
             }
-            final String json = Text.Serialization.toJsonString(message.getContent());
+            final String json = Text.Serialization.toJsonString(message.getContent(), player.getWorld().getRegistryManager());
+
             final Component comp = GsonComponentSerializer.gson().deserialize(json);
             if(INSTANCE.callEvent((e)->e.onMinecraftMessage(comp, player.getUuid()))){
                 return message;
@@ -103,7 +104,7 @@ public class DiscordIntegrationMod implements DedicatedServerModInitializer {
 
             if (!Configuration.instance().compatibility.disableParsingMentionsIngame) {
                 final String editedJson = GsonComponentSerializer.gson().serialize(MessageUtils.mentionsToNames(comp, channel.getGuild()));
-                final MutableText txt = Text.Serialization.fromJson(editedJson);
+                final MutableText txt = Text.Serialization.fromJson(editedJson,player.getWorld().getRegistryManager());
                 message = SignedMessage.ofUnsigned(txt.getString());
             }
         }

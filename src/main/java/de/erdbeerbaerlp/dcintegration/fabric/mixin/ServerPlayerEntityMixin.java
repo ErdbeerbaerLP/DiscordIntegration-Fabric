@@ -32,7 +32,7 @@ public class ServerPlayerEntityMixin {
             if (LinkManager.isPlayerLinked(p.getUuid()) && LinkManager.getLink(null, p.getUuid()).settings.hideFromDiscord)
                 return;
             final Text deathMessage = s.getDeathMessage(p);
-            final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(deathMessage);
+            final MessageEmbed embed = FabricMessageUtils.genItemStackEmbedIfAvailable(deathMessage, p.getWorld());
             if (!Localization.instance().playerDeath.isBlank())
                 if (Configuration.instance().embedMode.enabled && Configuration.instance().embedMode.deathMessage.asEmbed) {
                     final String avatarURL = Configuration.instance().webhook.playerAvatarURL.replace("%uuid%", p.getUuid().toString()).replace("%uuid_dashless%", p.getUuid().toString().replace("-", "")).replace("%name%", p.getName().getString()).replace("%randomUUID%", UUID.randomUUID().toString());

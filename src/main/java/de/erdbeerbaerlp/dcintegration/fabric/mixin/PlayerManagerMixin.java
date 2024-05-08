@@ -1,7 +1,6 @@
 package de.erdbeerbaerlp.dcintegration.fabric.mixin;
 
 import com.mojang.authlib.GameProfile;
-import com.mojang.brigadier.StringReader;
 import dcshadow.net.kyori.adventure.text.Component;
 import dcshadow.net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import de.erdbeerbaerlp.dcintegration.common.DiscordIntegration;
@@ -17,8 +16,8 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
-import net.minecraft.command.argument.TextArgumentType;
 import net.minecraft.network.ClientConnection;
+import net.minecraft.registry.BuiltinRegistries;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ConnectedClientData;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -49,7 +48,7 @@ public class PlayerManagerMixin {
         if (eventKick != null) {
             final String jsonComp = GsonComponentSerializer.gson().serialize(eventKick).replace("\\\\n", "\n");
             try {
-                final Text comp = TextArgumentType.text().parse(new StringReader(jsonComp));
+                final Text comp = Text.Serialization.fromJson(jsonComp, BuiltinRegistries.createWrapperLookup());
                 cir.setReturnValue(comp);
             } catch (Exception e) {
                 e.printStackTrace();
