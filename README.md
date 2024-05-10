@@ -3,6 +3,6 @@
 
 This mod links your server chat with a channel on your discord server.
 
-Wiki guide: https://wiki.erdbeerbaerlp.de/dcintegration:root
+Wiki: https://wiki.erdbeerbaerlp.de/dcintegration:root
 
 [![Discord Server](https://discordapp.com/api/guilds/881880836377546824/widget.png?style=banner2)](https://discord.gg/PGPWdRBQms)
