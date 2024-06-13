@@ -1,6 +1,10 @@
 [
   {
     "version": "3.0.7",
+    "changelog": "Fix mc version",
+    "type": "release"
+  },{
+    "version": "3.0.7",
     "changelog": "Fixed more bugs\nAdded a /discord rawmsg command\nAdded whitelist option for commandlog",
     "type": "release"
   },{
