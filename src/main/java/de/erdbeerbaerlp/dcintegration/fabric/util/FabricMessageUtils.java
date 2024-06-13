@@ -80,7 +80,7 @@ public class FabricMessageUtils extends MessageUtils {
                                         final ItemEnchantmentsComponent e = itemTag.get(DataComponentTypes.ENCHANTMENTS);
                                         if (((ShowInTooltipAccessor) e).discordIntegrationFabric$showsInTooltip())
                                             for (RegistryEntry<Enchantment> ench : e.getEnchantments()) {
-                                                tooltip.append(Formatting.strip(ench.value().getName(e.getLevel(ench.value())).getString())).append("\n");
+                                                tooltip.append(Formatting.strip(ench.value().getName(ench, e.getLevel(ench)).getString())).append("\n");
                                             }
                                     }
                                     if(itemTag.contains(DataComponentTypes.LORE)) {
