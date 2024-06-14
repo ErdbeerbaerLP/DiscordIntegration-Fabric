@@ -1,6 +1,10 @@
 [
   {
-    "version": "3.0.7",
+    "version": "3.0.7.2",
+    "changelog": "Fix mixin",
+    "type": "release"
+  },{
+    "version": "3.0.7.1",
     "changelog": "Fix mc version",
     "type": "release"
   },{
